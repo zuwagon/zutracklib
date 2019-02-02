@@ -1,10 +1,11 @@
-#zutracklib
+# zutracklib
 
 zutracklib is Zuwagon's library to enable live tracking in functionality in an application
 
-##Installation
+## Installation
 
-Step 1. Add the JitPack repository to your build file
+#### Step 1. Add the JitPack repository to your build file
+
 
 ```
 Add it in your root build.gradle at the end of repositories:
@@ -16,7 +17,10 @@ Add it in your root build.gradle at the end of repositories:
 		}
 	}
 ```
-Step 2. Add the dependency
+
+
+#### Step 2. Add the dependency
+
 
 ```
 	dependencies {
@@ -24,11 +28,10 @@ Step 2. Add the dependency
 	}
 ```
 
-##How to use?
+## How to use?
 
-###Configure
+#### Step 1: Configure the library, with below method.
 
-Step 1: Configure the library, with below method.
 
 ```
 Zuwagon.configure(
@@ -45,14 +48,17 @@ Zuwagon.configure(
     );
 ```
 
-Step 2: Start tracking the rider
+
+#### Step 2: Start tracking the rider
+
 
 ```
 Zuwagon.startTrack(MainActivity.this); //pass context
 ```
 
 
-Step 3: Stop tracking the rider
+#### Step 3: Stop tracking the rider
+
 
 ```
 Zuwagon.stopTrack(MainActivity.this); //pass context
