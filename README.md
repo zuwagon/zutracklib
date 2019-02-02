@@ -24,7 +24,7 @@ Add it in your root build.gradle at the end of repositories:
 
 ```
 	dependencies {
-	        implementation 'com.github.zuwagon:zutrack:0.12'
+	        implementation 'com.github.zuwagon:zutracklib:v1.0.0'
 	}
 ```
 
