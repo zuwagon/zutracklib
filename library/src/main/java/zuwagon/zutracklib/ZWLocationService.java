@@ -49,13 +49,10 @@ public class ZWLocationService extends Service {
     public static final void start(Context context) {
         Log.d(TAG, "ZWLocationService.start(...)");
         Intent serviceIntent = new Intent(context, ZWLocationService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && Zuwagon._needForegroundService) {
-            Log.d(TAG, "startForegroundService");
-            context.startForegroundService(serviceIntent);
-        } else {
-            Log.d(TAG, "startTrack");
-            context.startService(serviceIntent);
-        }
+
+        Log.d(TAG, "startTrack");
+        context.startService(serviceIntent);
+
     }
 
     public static final void stop(Context context) {
@@ -69,14 +66,6 @@ public class ZWLocationService extends Service {
         Log.d(TAG, "ZWLocationService.onCreate()");
 
         try {
-
-            if (Zuwagon._needForegroundService) {
-                Log.d(TAG, "ZWLocationService.startForeground(" + Constants.FOREGROUND_NOTIFICATION_ID + ", ...)");
-                startForeground(Constants.FOREGROUND_NOTIFICATION_ID, buildForegroundNotification());
-            } else {
-                Log.d(TAG, "ZWLocationService.stopForeground(true)");
-                stopForeground(true);
-            }
 
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
                     PackageManager.PERMISSION_GRANTED) throw new SecurityException();
@@ -233,30 +222,30 @@ public class ZWLocationService extends Service {
         }
     };
 
-    private Notification buildForegroundNotification() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-            NotificationChannel nc = new NotificationChannel(
-                    Constants.FOREGROUND_NOTIFICATION_CHANNEL_ID,
-                    Zuwagon._notificationChannelTitle, NotificationManager.IMPORTANCE_DEFAULT);
-
-            nm.createNotificationChannel(nc);
-        }
-
-        NotificationCompat.Builder b = new NotificationCompat.Builder(this,
-                Constants.FOREGROUND_NOTIFICATION_CHANNEL_ID);
-
-        b.setOngoing(true);
-        if (Zuwagon._notificationSmallIconRes != 0) b.setSmallIcon(Zuwagon._notificationSmallIconRes);
-        if (Zuwagon._notificationTitle != null) b.setContentTitle(Zuwagon._notificationTitle);
-        if (Zuwagon._notificationText != null) b.setContentText(Zuwagon._notificationText);
-        if (Zuwagon._notificationTicker != null) b.setTicker(Zuwagon._notificationTicker);
-        b.setOnlyAlertOnce(true);
-        b.setPriority(NotificationCompat.PRIORITY_HIGH);
-
-        return b.build();
-    }
+//    private Notification buildForegroundNotification() {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+//
+//            NotificationChannel nc = new NotificationChannel(
+//                    Constants.FOREGROUND_NOTIFICATION_CHANNEL_ID,
+//                    Zuwagon._notificationChannelTitle, NotificationManager.IMPORTANCE_DEFAULT);
+//
+//            nm.createNotificationChannel(nc);
+//        }
+//
+//        NotificationCompat.Builder b = new NotificationCompat.Builder(this,
+//                Constants.FOREGROUND_NOTIFICATION_CHANNEL_ID);
+//
+//        b.setOngoing(true);
+//        if (Zuwagon._notificationSmallIconRes != 0) b.setSmallIcon(Zuwagon._notificationSmallIconRes);
+//        if (Zuwagon._notificationTitle != null) b.setContentTitle(Zuwagon._notificationTitle);
+//        if (Zuwagon._notificationText != null) b.setContentText(Zuwagon._notificationText);
+//        if (Zuwagon._notificationTicker != null) b.setTicker(Zuwagon._notificationTicker);
+//        b.setOnlyAlertOnce(true);
+//        b.setPriority(NotificationCompat.PRIORITY_HIGH);
+//
+//        return b.build();
+//    }
 
 
     class ServiceThread extends Thread {
