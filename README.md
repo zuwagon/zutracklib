@@ -1,6 +1,6 @@
 # zutracklib
 
-zutracklib is Zuwagon's library to enable live tracking in functionality in an application
+zutracklib is Zuwagon's library to enable live tracking functionality in an application
 
 ## Installation
 
