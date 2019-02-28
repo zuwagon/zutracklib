@@ -16,7 +16,7 @@ public class ZWBootReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             Log.d(TAG, "ZWBootReceiver.onReceive(..., " + intent + ")");
-            if (Zuwagon._needServiceStarted) Zuwagon.startTrack(context);
+            if (Zuwagon._needServiceStarted) Zuwagon.startTrackingService(context);
         }
     }
 }

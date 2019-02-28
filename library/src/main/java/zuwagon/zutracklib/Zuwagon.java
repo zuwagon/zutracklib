@@ -2,6 +2,7 @@ package zuwagon.zutracklib;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -14,13 +15,28 @@ import android.support.annotation.StringRes;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import static zuwagon.zutracklib.Constants.TAG;
+import static zuwagon.zutracklib.ZWStatusCallback.BASE_URL;
+import static zuwagon.zutracklib.ZWStatusCallback.CALL_API;
 
 /**
  * Entry library class. Purposed to configure and control location tracker.
@@ -43,7 +59,7 @@ public class Zuwagon {
     static int _rationaleTextRes = R.string.default_rationale_access_fine_location;
     static int _rationalePositiveButtonRes = R.string.default_rationale_positive_button;
 
-    static boolean _needForegroundService = ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.O );
+    static boolean _needForegroundService = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O);
 
     static ZWLocationService _currentServiceInstance = null;
 
@@ -55,16 +71,16 @@ public class Zuwagon {
     private static Thread.UncaughtExceptionHandler defaultGlobalExceptionHandler;
 
 
-
     /**
      * Initial framework configuration.
-     * @param context Application or activity context.
-     * @param notificationSmallIconRes Resource Id of small (24x24dp) notification icon. It will appear in foreground service notification and in rationale dialog.
-     * @param notificationChannelTitle Notification channel title (Oreo and later).
-     * @param notificationTitle Notification title.
-     * @param notificationText Notification text.
-     * @param notificationTicker Notification ticker. Can be null.
-     * @param rationaleTextRes String resource id of location permissions rationale text.
+     *
+     * @param context                    Application or activity context.
+     * @param notificationSmallIconRes   Resource Id of small (24x24dp) notification icon. It will appear in foreground service notification and in rationale dialog.
+     * @param notificationChannelTitle   Notification channel title (Oreo and later).
+     * @param notificationTitle          Notification title.
+     * @param notificationText           Notification text.
+     * @param notificationTicker         Notification ticker. Can be null.
+     * @param rationaleTextRes           String resource id of location permissions rationale text.
      * @param rationalePositiveButtonRes String resource of 'OK/GOT IT' button.
      */
     public static final void configure(final Context context,
@@ -77,8 +93,7 @@ public class Zuwagon {
                                        String notificationTicker,
                                        @StringRes int rationaleTextRes,
                                        @StringRes int rationalePositiveButtonRes
-                                       )
-    {
+    ) {
         _config = PreferenceManager.getDefaultSharedPreferences(context);
         _riderId = riderId;
         _apiKey = apiKey;
@@ -97,20 +112,21 @@ public class Zuwagon {
 
         // Tracker self-stopping on uncaught exception and calls default exception handler
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-             @Override
-             public void uncaughtException(Thread t, Throwable e) {
-                 Log.d(TAG, "Stopping tracking on application exception.");
-                 if (isTracking()) stopTrack(context);
-                 defaultGlobalExceptionHandler.uncaughtException(t, e);
-             }
-         });
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                Log.d(TAG, "Stopping tracking on application exception.");
+                if (isTracking()) stopTrackingService(context);
+                defaultGlobalExceptionHandler.uncaughtException(t, e);
+            }
+        });
     }
 
     /**
      * Start tracking command. Launches tracking flow.
+     *
      * @param context Application or activity context.
      */
-    public static final void startTrack(Context context) {
+    public static final void startTrackingService(Context context) {
         setNeedServiceStarted(true);
         ZWLocationService.start(context);
         ZWAlarmReceiver.setupAlarm(context, Constants.RECREATE_SERVICE_ON_DESTROY_DELAY_MS);
@@ -119,16 +135,19 @@ public class Zuwagon {
 
     /**
      * Stop tracking command. Interrupts tracking flow.
+     *
      * @param context Application or activity context.
      */
-    public static final void stopTrack(Context context) {
+    public static final void stopTrackingService(Context context) {
         setNeedServiceStarted(false);
         ZWAlarmReceiver.clearAlarm(context);
         ZWSocket.disconnectFromServer();
+
     }
 
     /**
      * Check tracking enabled and active.
+     *
      * @return true if tracking enabled and active.
      */
     public static final boolean isTracking() {
@@ -141,7 +160,8 @@ public class Zuwagon {
 
     /**
      * Adds status receiver callback. Multiple callbacks can be added.
-     * @param callback {@link ZWStatusCallback ZWStatusCallback} implementation
+     *
+     * @param callback         {@link ZWStatusCallback ZWStatusCallback} implementation
      * @param returnLastStatus true if need to return last status to current callback
      */
     public static final void addStatusCallback(final ZWStatusCallback callback, boolean returnLastStatus) {
@@ -153,6 +173,7 @@ public class Zuwagon {
 
     /**
      * Removes status receiver callback from callbacks list.
+     *
      * @param callback {@link ZWStatusCallback ZWStatusCallback} reference to remove
      */
     public static final void removeStatusCallback(ZWStatusCallback callback) {
@@ -166,6 +187,7 @@ public class Zuwagon {
     /**
      * Adds location processor. Multiple callbacks can be added.
      * When new location data received from Fused Location Provider, all callbacks are triggered.
+     *
      * @param processLocationCallback {@link ZWProcessLocationCallback ZWProcessLocationCallback} implementation
      */
     public static final void addLocationProcessor(ZWProcessLocationCallback processLocationCallback) {
@@ -176,6 +198,7 @@ public class Zuwagon {
 
     /**
      * Removes location processor from list.
+     *
      * @param processLocationCallback {@link ZWProcessLocationCallback ZWProcessLocationCallback} reference to remove
      */
     public static final void removeLocationProcessor(ZWProcessLocationCallback processLocationCallback) {
@@ -189,15 +212,15 @@ public class Zuwagon {
     /**
      * Getting current location from Fused Location Provider.
      * Permission checking will be performed if need.
-     *
+     * <p>
      * The location object may be null in the following situations:
-     *
+     * <p>
      * Location is turned off in the device settings. The result could be null even if the last location
      * was previously retrieved because disabling location also clears the cache.
-     *
+     * <p>
      * The device never recorded its location, which could be the case of a new device or a device that has
      * been restored to factory settings.
-     *
+     * <p>
      * Google Play services on the device has restarted, and there is no active Fused Location Provider
      * client that has requested location after the services restarted. To avoid this situation you can
      * create a new client and request location updates yourself.
@@ -222,11 +245,11 @@ public class Zuwagon {
                         } else {
                             callback.onResult(ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE, null);
                         }
-                    } catch (Exception ignored) { }
+                    } catch (Exception ignored) {
+                    }
                 }
             });
         }
-
     }
 
     ///
@@ -259,5 +282,210 @@ public class Zuwagon {
                 }
             });
         }
+    }
+
+    public static String StartTracking(Context context, String group_ID) {
+        try {
+            if (SpHelper.get_istarted(context)) {
+                Log.e("StartTracking", "if    ");
+                return "Tracking also started";
+            } else {
+                Log.e("StartTracking", "else   ");
+                StartTracking_http(context, group_ID);
+                return "Tracking started";
+            }
+        } catch (Exception e) {
+            Log.e("StartTracking", "exception   ");
+            return "System error";
+        }
+    }
+
+    private static void StartTracking_http(final Context context, final String group_ID) {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED) {
+            Intent intent = new Intent(context, ZWResolutionActivity.class);
+            intent.putExtra("option", Constants.RESOLUTION_OPTION_PERMISSIONS);
+            intent.putExtra(CALL_API, true);
+            intent.putExtra("START_STOP", "START");
+            intent.putExtra("Group_ID", group_ID);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        } else {
+            instantLocation(context, new ZWInstantLocationCallback() {
+                @Override
+                public void onResult(int result, Location location) {
+                    switch (result) {
+                        case ZWInstantLocationCallback.OK:
+                            Log.e("StartTracking_http", "StartTracking_http " + location.toString());
+                            callStartAPI(context, location, group_ID);
+                            break;
+                        case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
+
+                            break;
+                        case ZWInstantLocationCallback.PERMISSION_REQUEST_NEED:
+
+                            break;
+                    }
+                }
+            });
+        }
+    }
+
+    private static void callStartAPI(final Context context, Location location, String G_id) {
+
+        RequestQueue queue = Volley.newRequestQueue(context);
+        JSONObject object = new JSONObject();
+        try {
+//            object.put("rider_id", "");
+            object.put("rider_id", _riderId);
+            object.put("trip", "START");
+            object.put("group_id", G_id);
+            JSONObject loc_obj = new JSONObject();
+            loc_obj.put("lat", location.getLatitude());
+            loc_obj.put("lon", location.getLongitude());
+            object.put("loc", loc_obj);
+
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, BASE_URL + "/order", object, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                Log.e("onResponse", "onResponse   " + response);
+                startTrackingService(context);
+                SpHelper.set_isstarted(context, true);
+                //zwHttpCallback.HttpResponseMsg(response);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("onErrorResponse", "onErrorResponse   " + error);
+
+            }
+        }) {
+
+            /**
+             * Passing some request headers
+             * */
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                HashMap<String, String> headers = new HashMap<>();
+                try {
+                    headers.put("Authorization", _apiKey);
+                    headers.put("Content-Type", "application/json");
+                    // headers.put("Content-Type", "application/json");
+                    headers.put("source", "x-order-tracking");
+                    return headers;
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+
+        };
+
+        queue.add(request);
+
+
+    }
+
+    ZWHttpCallback zwHttpCallback;
+
+    public static void StopTracking(final Context context, final String G_id) {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED) {
+            Intent intent = new Intent(context, ZWResolutionActivity.class);
+            intent.putExtra("option", Constants.RESOLUTION_OPTION_PERMISSIONS);
+            intent.putExtra("permission_for_location", true);
+            intent.putExtra("START_STOP", "END");
+            intent.putExtra("Group_ID", G_id);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        } else {
+
+            instantLocation(context, new ZWInstantLocationCallback() {
+                @Override
+                public void onResult(int result, Location location) {
+                    switch (result) {
+                        case ZWInstantLocationCallback.OK:
+                            Log.e("StopTracking", "StopTracking " + location.toString());
+                            callStopAPI(context, location, G_id);
+                            break;
+                        case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
+
+
+                            break;
+                        case ZWInstantLocationCallback.PERMISSION_REQUEST_NEED:
+
+
+                            break;
+                    }
+                }
+            });
+
+        }
+    }
+
+    private static void callStopAPI(final Context context, Location location, String G_id) {
+        Log.e("---", "-------------------------------------");
+        RequestQueue queue = Volley.newRequestQueue(context);
+        JSONObject object = new JSONObject();
+        try {
+//            object.put("rider_id", "");
+            object.put("rider_id", _riderId);
+            object.put("trip", "END");
+            object.put("group_id", G_id);
+            JSONObject loc_obj = new JSONObject();
+            loc_obj.put("lat", location.getLatitude());
+            loc_obj.put("lon", location.getLongitude());
+            object.put("loc", loc_obj);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, BASE_URL + "/order", object, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                Log.e("onResponse", "onResponse   " + response);
+                stopTrackingService(context);
+                SpHelper.set_isstarted(context, false);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("onErrorResponse", "onErrorResponse   " + error);
+                String statusCode = String.valueOf(error.networkResponse.statusCode);
+                //get response body and parse with appropriate encoding
+                if (error.networkResponse.data != null) {
+                    try {
+                        SpHelper.set_isstarted(context, false);
+                        String body = new String(error.networkResponse.data, "UTF-8");
+                        Log.e("onErrorResponse", "onErrorResponse  body " + body);
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }) {
+
+            /**
+             * Passing some request headers
+             * */
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                HashMap<String, String> headers = new HashMap<>();
+                try {
+                    headers.put("Authorization", _apiKey);
+                    headers.put("Content-Type", "application/json");
+                    // headers.put("Content-Type", "application/json");
+                    headers.put("source", "x-order-tracking");
+                    return headers;
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+
+        };
+        queue.add(request);
     }
 }
