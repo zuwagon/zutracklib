@@ -29,14 +29,14 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.bEnableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Zuwagon.startTrack(MainActivity.this);
+                Zuwagon.StartTracking(MainActivity.this, "12345");
             }
         });
 
         findViewById(R.id.bDisableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Zuwagon.stopTrack(MainActivity.this);
+                Zuwagon.StopTracking(MainActivity.this, "12345");
             }
         });
 
@@ -51,9 +51,15 @@ public class MainActivity extends AppCompatActivity {
                             public void run() {
                                 String text = "Unknown result: " + result;
                                 switch (result) {
-                                    case ZWInstantLocationCallback.OK: text = "Current location: " + location; break;
-                                    case ZWInstantLocationCallback.PERMISSION_REQUEST_NEED: text = "Location permission request need"; break;
-                                    case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE: text = "Location data not available"; break;
+                                    case ZWInstantLocationCallback.OK:
+                                        text = "Current location: " + location;
+                                        break;
+                                    case ZWInstantLocationCallback.PERMISSION_REQUEST_NEED:
+                                        text = "Location permission request need";
+                                        break;
+                                    case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
+                                        text = "Location data not available";
+                                        break;
                                 }
 
 /*
@@ -122,13 +128,27 @@ Location Updates.
             int statusRes = R.string.zw_status_unknown;
 
             switch (code) {
-                case ZWStatus.SERVICE_STARTED: statusRes = R.string.zw_status_service_started; break;
-                case ZWStatus.INCORRECT_LOCATION_REQUEST_PARAMETERS: statusRes = R.string.zw_status_incorrect_request_parameters; break;
-                case ZWStatus.HARDWARE_RESOLUTION_FAILED: statusRes = R.string.zw_status_hardware_resolution_failed; break;
-                case ZWStatus.PERMISSION_REQUEST_FAILED: statusRes = R.string.zw_status_permission_request_failed; break;
-                case ZWStatus.SERIVCE_STOPPED: statusRes = R.string.zw_status_service_stopped; break;
-                case ZWStatus.HTTP_REQUEST_FAILED: statusRes = R.string.zw_status_http_request_failed; break;
-                case ZWStatus.WARNING_NO_LOCATION_LONG_TIME: statusRes = R.string.zw_status_warning_no_location_long_time; break;
+                case ZWStatus.SERVICE_STARTED:
+                    statusRes = R.string.zw_status_service_started;
+                    break;
+                case ZWStatus.INCORRECT_LOCATION_REQUEST_PARAMETERS:
+                    statusRes = R.string.zw_status_incorrect_request_parameters;
+                    break;
+                case ZWStatus.HARDWARE_RESOLUTION_FAILED:
+                    statusRes = R.string.zw_status_hardware_resolution_failed;
+                    break;
+                case ZWStatus.PERMISSION_REQUEST_FAILED:
+                    statusRes = R.string.zw_status_permission_request_failed;
+                    break;
+                case ZWStatus.SERIVCE_STOPPED:
+                    statusRes = R.string.zw_status_service_stopped;
+                    break;
+                case ZWStatus.HTTP_REQUEST_FAILED:
+                    statusRes = R.string.zw_status_http_request_failed;
+                    break;
+                case ZWStatus.WARNING_NO_LOCATION_LONG_TIME:
+                    statusRes = R.string.zw_status_warning_no_location_long_time;
+                    break;
             }
 
             tvStatus.setText(statusRes);

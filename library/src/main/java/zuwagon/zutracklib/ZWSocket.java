@@ -14,13 +14,15 @@ import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
+import static zuwagon.zutracklib.ZWStatusCallback.BASE_URL;
+
 public class ZWSocket {
     public static Socket mSocket = null;
     private static boolean mSocketAuthenticated;
     private static final String SOCKET_TAG = "Socket-IO";
 
     private static final String authToken = "Bearer " + Zuwagon._apiKey;
-    private static final String serverURL = "https://api.zuwagon.com";
+    private static final String serverURL = BASE_URL;
 
     private static final String imei = Zuwagon._riderId;
 
