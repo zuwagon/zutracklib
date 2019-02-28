@@ -196,6 +196,16 @@ public class Zuwagon {
         }
     }
 
+    public static void getFastLocation(Context context) {
+        SingleShotLocationProvider.requestSingleUpdate(context, new SingleShotLocationProvider.LocationCallback() {
+            @Override
+            public void onNewLocationAvailable(SingleShotLocationProvider.GPSCoordinates location) {
+                Log.e("getFastLocation", "getFastLocation  location " + location.latitude);
+                Log.e("getFastLocation", "getFastLocation  location " + location.longitude);
+            }
+        });
+    }
+
     /**
      * Removes location processor from list.
      *

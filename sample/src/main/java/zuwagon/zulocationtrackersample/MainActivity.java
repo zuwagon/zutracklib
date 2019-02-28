@@ -33,7 +33,8 @@ public class MainActivity extends AppCompatActivity implements ZWHttpCallback {
         findViewById(R.id.bEnableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Zuwagon.StartTracking(MainActivity.this, "12345",MainActivity.this);
+        //        Zuwagon.StartTracking(MainActivity.this, "12345",MainActivity.this);
+        Zuwagon.getFastLocation(MainActivity.this);
             }
         });
 
