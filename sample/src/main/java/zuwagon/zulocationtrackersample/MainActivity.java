@@ -5,16 +5,20 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import org.json.JSONObject;
+
+import zuwagon.zutracklib.ZWHttpCallback;
 import zuwagon.zutracklib.ZWInstantLocationCallback;
 import zuwagon.zutracklib.ZWProcessLocationCallback;
 import zuwagon.zutracklib.ZWStatus;
 import zuwagon.zutracklib.ZWStatusCallback;
 import zuwagon.zutracklib.Zuwagon;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ZWHttpCallback {
 
     TextView tvStatus, tvLocation;
 
@@ -29,14 +33,14 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.bEnableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Zuwagon.StartTracking(MainActivity.this, "12345");
+                Zuwagon.StartTracking(MainActivity.this, "12345",MainActivity.this);
             }
         });
 
         findViewById(R.id.bDisableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Zuwagon.StopTracking(MainActivity.this, "12345");
+                Zuwagon.StopTracking(MainActivity.this, "12345",MainActivity.this);
             }
         });
 
@@ -170,4 +174,15 @@ Location Updates.
             });
         }
     };
+
+    @Override
+    public void HttpErrorMsg(String msg) {
+        Log.e("HttpErrorMsg",">>>   "+msg);
+    }
+
+    @Override
+    public void HttpResponseMsg(JSONObject jsonObject) {
+        Log.e("HttpResponseMsg",">>>   "+jsonObject);
+
+    }
 }

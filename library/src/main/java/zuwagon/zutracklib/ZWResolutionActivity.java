@@ -136,9 +136,9 @@ public class ZWResolutionActivity extends Activity {
                 Zuwagon.startTrackingService(this);
             } else if (callApis) {
                 if (start_stop_action.equalsIgnoreCase("END")) {
-                    Zuwagon.StopTracking(this, Group_ID);
+                    Zuwagon.StopTracking(this, Group_ID,null);
                 } else {
-                    Zuwagon.StartTracking(this, Group_ID);
+                    Zuwagon.StartTracking(this, Group_ID,null);
                 }
                 Toast.makeText(this, "" + start_stop_action, Toast.LENGTH_SHORT).show();
             }

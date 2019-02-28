@@ -284,14 +284,14 @@ public class Zuwagon {
         }
     }
 
-    public static String StartTracking(Context context, String group_ID) {
+    public static String StartTracking(Context context, String group_ID, ZWHttpCallback zwHttpCallback) {
         try {
-            if (SpHelper.get_istarted(context)) {
+            if (_needServiceStarted) {
                 Log.e("StartTracking", "if    ");
                 return "Tracking also started";
             } else {
                 Log.e("StartTracking", "else   ");
-                StartTracking_http(context, group_ID);
+                StartTracking_http(context, group_ID, zwHttpCallback);
                 return "Tracking started";
             }
         } catch (Exception e) {
@@ -300,7 +300,7 @@ public class Zuwagon {
         }
     }
 
-    private static void StartTracking_http(final Context context, final String group_ID) {
+    private static void StartTracking_http(final Context context, final String group_ID, final ZWHttpCallback zwHttpCallback) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
             Intent intent = new Intent(context, ZWResolutionActivity.class);
@@ -317,7 +317,7 @@ public class Zuwagon {
                     switch (result) {
                         case ZWInstantLocationCallback.OK:
                             Log.e("StartTracking_http", "StartTracking_http " + location.toString());
-                            callStartAPI(context, location, group_ID);
+                            callStartAPI(context, location, group_ID, zwHttpCallback);
                             break;
                         case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
 
@@ -331,7 +331,7 @@ public class Zuwagon {
         }
     }
 
-    private static void callStartAPI(final Context context, Location location, String G_id) {
+    private static void callStartAPI(final Context context, Location location, String G_id, final ZWHttpCallback zwHttpCallback) {
 
         RequestQueue queue = Volley.newRequestQueue(context);
         JSONObject object = new JSONObject();
@@ -354,14 +354,21 @@ public class Zuwagon {
             public void onResponse(JSONObject response) {
                 Log.e("onResponse", "onResponse   " + response);
                 startTrackingService(context);
-                SpHelper.set_isstarted(context, true);
-                //zwHttpCallback.HttpResponseMsg(response);
+                zwHttpCallback.HttpResponseMsg(response);
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 Log.e("onErrorResponse", "onErrorResponse   " + error);
-
+                if (error.networkResponse.data != null) {
+                    try {
+                        String body = new String(error.networkResponse.data, "UTF-8");
+                        zwHttpCallback.HttpErrorMsg(body);
+                        Log.e("onErrorResponse", "onErrorResponse  body " + body);
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }) {
 
@@ -389,9 +396,8 @@ public class Zuwagon {
 
     }
 
-    ZWHttpCallback zwHttpCallback;
 
-    public static void StopTracking(final Context context, final String G_id) {
+    public static void StopTracking(final Context context, final String G_id, final ZWHttpCallback zwHttpCallback) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
             Intent intent = new Intent(context, ZWResolutionActivity.class);
@@ -409,7 +415,7 @@ public class Zuwagon {
                     switch (result) {
                         case ZWInstantLocationCallback.OK:
                             Log.e("StopTracking", "StopTracking " + location.toString());
-                            callStopAPI(context, location, G_id);
+                            callStopAPI(context, location, G_id, zwHttpCallback);
                             break;
                         case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
 
@@ -426,7 +432,7 @@ public class Zuwagon {
         }
     }
 
-    private static void callStopAPI(final Context context, Location location, String G_id) {
+    private static void callStopAPI(final Context context, Location location, String G_id, final ZWHttpCallback zwHttpCallback) {
         Log.e("---", "-------------------------------------");
         RequestQueue queue = Volley.newRequestQueue(context);
         JSONObject object = new JSONObject();
@@ -448,7 +454,7 @@ public class Zuwagon {
             public void onResponse(JSONObject response) {
                 Log.e("onResponse", "onResponse   " + response);
                 stopTrackingService(context);
-                SpHelper.set_isstarted(context, false);
+                zwHttpCallback.HttpResponseMsg(response);
             }
         }, new Response.ErrorListener() {
             @Override
@@ -458,8 +464,8 @@ public class Zuwagon {
                 //get response body and parse with appropriate encoding
                 if (error.networkResponse.data != null) {
                     try {
-                        SpHelper.set_isstarted(context, false);
                         String body = new String(error.networkResponse.data, "UTF-8");
+                        zwHttpCallback.HttpErrorMsg(body);
                         Log.e("onErrorResponse", "onErrorResponse  body " + body);
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
