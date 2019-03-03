@@ -196,7 +196,7 @@ public class Zuwagon {
         }
     }
 
-    public static void getFastLocation(Context context) {
+   /* public static void getFastLocation(Context context) {
         SingleShotLocationProvider.requestSingleUpdate(context, new SingleShotLocationProvider.LocationCallback() {
             @Override
             public void onNewLocationAvailable(SingleShotLocationProvider.GPSCoordinates location) {
@@ -205,6 +205,7 @@ public class Zuwagon {
             }
         });
     }
+*/
 
     /**
      * Removes location processor from list.
@@ -294,34 +295,42 @@ public class Zuwagon {
         }
     }
 
-    public static String StartTracking(Context context, String group_ID, ZWHttpCallback zwHttpCallback) {
-        try {
-            if (_needServiceStarted) {
-                Log.e("StartTracking", "if    ");
-                return "Tracking also started";
-            } else {
-                Log.e("StartTracking", "else   ");
-                StartTracking_http(context, group_ID, zwHttpCallback);
-                return "Tracking started";
-            }
-        } catch (Exception e) {
-            Log.e("StartTracking", "exception   ");
-            return "System error";
-        }
+    private static ZWHttpCallback zwHttpCallback2;
+
+    public static void setInterface(ZWHttpCallback zwHttpCallback) {
+        zwHttpCallback2 = zwHttpCallback;
     }
 
-    private static void StartTracking_http(final Context context, final String group_ID, final ZWHttpCallback zwHttpCallback) {
+    public static String StartTracking(Context context, String group_ID) {
+        //  try {
+        if (_needServiceStarted) {
+            Log.e("StartTracking", "if    ");
+            return "Tracking also started";
+        } else {
+            Log.e("StartTracking", "else   ");
+            StartTracking_http(context, group_ID);
+            return "Tracking started";
+        }
+        /*} catch (Exception e) {
+            Log.e("StartTracking", "exception   ");
+            return "System error";
+        }*/
+    }
+
+    private static void StartTracking_http(final Context context, final String group_ID) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
             Intent intent = new Intent(context, ZWResolutionActivity.class);
             intent.putExtra("option", Constants.RESOLUTION_OPTION_PERMISSIONS);
             intent.putExtra(CALL_API, true);
+//            Log.e("RESOLUTION_ON_PESIONS", "zwHttpCallback <> " + zwHttpCallback);
+//            intent.putExtra(ZWSTATUSCALLBACK, zwHttpCallback);
             intent.putExtra("START_STOP", "START");
             intent.putExtra("Group_ID", group_ID);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } else {
-            instantLocation(context, new ZWInstantLocationCallback() {
+           /* instantLocation(context, new ZWInstantLocationCallback() {
                 @Override
                 public void onResult(int result, Location location) {
                     switch (result) {
@@ -337,11 +346,38 @@ public class Zuwagon {
                             break;
                     }
                 }
+            });*/
+
+            SingleShotLocationProvider.requestSingleUpdate(context, new SingleShotLocationProvider.LocationCallback() {
+                @Override
+                public void onNewLocationAvailable(SingleShotLocationProvider.GPSCoordinates location) {
+                    Log.e("getFastLocation", "getFastLocation  location " + location.latitude);
+                    Log.e("getFastLocation", "getFastLocation  location " + location.longitude);
+
+                    Location loc = new Location("");
+                    loc = getLocation(location);
+                    if (loc != null) {
+                        callStartAPI(context, loc, group_ID);
+                    } else {
+                        zwHttpCallback2.HttpErrorMsg("Location not available");
+                    }
+                }
             });
         }
     }
 
-    private static void callStartAPI(final Context context, Location location, String G_id, final ZWHttpCallback zwHttpCallback) {
+    private static Location getLocation(SingleShotLocationProvider.GPSCoordinates location) {
+        if (location.longitude != 0 && location.latitude != 0) {
+            Location targetLocation = new Location("");
+            targetLocation.setLatitude(location.latitude);
+            targetLocation.setLongitude(location.longitude);
+            return targetLocation;
+        } else {
+            return null;
+        }
+    }
+
+    private static void callStartAPI(final Context context, Location location, String G_id) {
 
         RequestQueue queue = Volley.newRequestQueue(context);
         JSONObject object = new JSONObject();
@@ -364,7 +400,7 @@ public class Zuwagon {
             public void onResponse(JSONObject response) {
                 Log.e("onResponse", "onResponse   " + response);
                 startTrackingService(context);
-                zwHttpCallback.HttpResponseMsg(response);
+                zwHttpCallback2.HttpResponseMsg(response);
             }
         }, new Response.ErrorListener() {
             @Override
@@ -373,7 +409,7 @@ public class Zuwagon {
                 if (error.networkResponse.data != null) {
                     try {
                         String body = new String(error.networkResponse.data, "UTF-8");
-                        zwHttpCallback.HttpErrorMsg(body);
+                        zwHttpCallback2.HttpErrorMsg(body);
                         Log.e("onErrorResponse", "onErrorResponse  body " + body);
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
@@ -398,34 +434,32 @@ public class Zuwagon {
                     return null;
                 }
             }
-
         };
-
         queue.add(request);
-
-
     }
 
 
-    public static void StopTracking(final Context context, final String G_id, final ZWHttpCallback zwHttpCallback) {
+    public static void StopTracking_Http(final Context context, final String G_id) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
             Intent intent = new Intent(context, ZWResolutionActivity.class);
             intent.putExtra("option", Constants.RESOLUTION_OPTION_PERMISSIONS);
-            intent.putExtra("permission_for_location", true);
+            intent.putExtra(CALL_API, true);
+//            intent.putExtra(ZWSTATUSCALLBACK, zwHttpCallback);
             intent.putExtra("START_STOP", "END");
             intent.putExtra("Group_ID", G_id);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } else {
 
+/*
             instantLocation(context, new ZWInstantLocationCallback() {
                 @Override
                 public void onResult(int result, Location location) {
                     switch (result) {
                         case ZWInstantLocationCallback.OK:
                             Log.e("StopTracking", "StopTracking " + location.toString());
-                            callStopAPI(context, location, G_id, zwHttpCallback);
+                            callStopAPI(context, location, G_id);
                             break;
                         case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
 
@@ -438,11 +472,27 @@ public class Zuwagon {
                     }
                 }
             });
+*/
+            SingleShotLocationProvider.requestSingleUpdate(context, new SingleShotLocationProvider.LocationCallback() {
+                @Override
+                public void onNewLocationAvailable(SingleShotLocationProvider.GPSCoordinates location) {
+                    Log.e("getFastLocation", "getFastLocation  location " + location.latitude);
+                    Log.e("getFastLocation", "getFastLocation  location " + location.longitude);
+
+                    Location loc = new Location("");
+                    loc = getLocation(location);
+                    if (loc != null) {
+                        callStopAPI(context, loc, G_id);
+                    } else {
+                        zwHttpCallback2.HttpErrorMsg("Location not available");
+                    }
+                }
+            });
 
         }
     }
 
-    private static void callStopAPI(final Context context, Location location, String G_id, final ZWHttpCallback zwHttpCallback) {
+    private static void callStopAPI(final Context context, Location location, String G_id) {
         Log.e("---", "-------------------------------------");
         RequestQueue queue = Volley.newRequestQueue(context);
         JSONObject object = new JSONObject();
@@ -464,7 +514,7 @@ public class Zuwagon {
             public void onResponse(JSONObject response) {
                 Log.e("onResponse", "onResponse   " + response);
                 stopTrackingService(context);
-                zwHttpCallback.HttpResponseMsg(response);
+                zwHttpCallback2.HttpResponseMsg(response);
             }
         }, new Response.ErrorListener() {
             @Override
@@ -475,7 +525,7 @@ public class Zuwagon {
                 if (error.networkResponse.data != null) {
                     try {
                         String body = new String(error.networkResponse.data, "UTF-8");
-                        zwHttpCallback.HttpErrorMsg(body);
+                        zwHttpCallback2.HttpErrorMsg(body);
                         Log.e("onErrorResponse", "onErrorResponse  body " + body);
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
@@ -483,7 +533,6 @@ public class Zuwagon {
                 }
             }
         }) {
-
             /**
              * Passing some request headers
              * */
@@ -500,8 +549,129 @@ public class Zuwagon {
                     return null;
                 }
             }
-
         };
         queue.add(request);
     }
+
+    public static void PickUp_order(final Context context, Location location, String group_id, String order_id) {
+        Log.e("PickUp_order", "PickUp_order>>  " + location.toString());
+        RequestQueue mRequestQueue = Volley.newRequestQueue(context);
+        JSONObject param = new JSONObject();
+        try {
+            JSONObject loc = new JSONObject();
+            loc.put("lat", location.getLatitude());
+            loc.put("lon", location.getLongitude());
+            param.put("group_id", group_id);
+            param.put("rider_id", _riderId);
+            param.put("order_id", order_id);
+            param.put("type", "PICKUP");
+            param.put("loc", loc);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest jsonObjReq = new JsonObjectRequest(
+                Request.Method.POST, BASE_URL + "/order/delivery", param, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                zwHttpCallback2.Pick_DropResponse(response);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("onErrorResponse", "onErrorResponse   " + error);
+                if (error.networkResponse.data != null) {
+                    try {
+                        String body = new String(error.networkResponse.data, "UTF-8");
+                        zwHttpCallback2.Pick_Droperror(body);
+                        Log.e("onErrorResponse", "onErrorResponse  body " + body);
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }) {
+
+            /**
+             * Passing some request headers
+             * */
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                HashMap<String, String> headers = new HashMap<String, String>();
+                try {
+                    headers.put("Authorization", _apiKey);
+                    headers.put("Content-Type", "application/json");
+                    headers.put("source", "x-order-tracking");
+                    return headers;
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+
+        };
+
+        mRequestQueue.add(jsonObjReq);
+    }
+
+    public static void Drop_order(final Context context, Location location, String group_id, String order_id) {
+        Log.e("PickUp_order", "PickUp_order>>  " + location.toString());
+        RequestQueue mRequestQueue = Volley.newRequestQueue(context);
+        JSONObject param = new JSONObject();
+        try {
+            JSONObject loc = new JSONObject();
+            loc.put("lat", location.getLatitude());
+            loc.put("lon", location.getLongitude());
+            param.put("group_id", group_id);
+            param.put("rider_id", _riderId);
+            param.put("order_id", order_id);
+            param.put("type", "DROP");
+            param.put("loc", loc);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest jsonObjReq = new JsonObjectRequest(
+                Request.Method.POST, BASE_URL + "/order/delivery", param, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                zwHttpCallback2.Pick_DropResponse(response);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("onErrorResponse", "onErrorResponse   " + error);
+                if (error.networkResponse.data != null) {
+                    try {
+                        String body = new String(error.networkResponse.data, "UTF-8");
+                        zwHttpCallback2.Pick_Droperror(body);
+                        Log.e("onErrorResponse", "onErrorResponse  body " + body);
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }) {
+
+            /**
+             * Passing some request headers
+             * */
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                HashMap<String, String> headers = new HashMap<String, String>();
+                try {
+                    headers.put("Authorization", _apiKey);
+                    headers.put("Content-Type", "application/json");
+                    headers.put("source", "x-order-tracking");
+                    return headers;
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+
+        };
+
+        mRequestQueue.add(jsonObjReq);
+    }
+
+
 }

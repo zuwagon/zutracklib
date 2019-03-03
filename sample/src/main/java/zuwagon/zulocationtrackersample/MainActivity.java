@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity implements ZWHttpCallback {
 
     TextView tvStatus, tvLocation;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,15 +34,24 @@ public class MainActivity extends AppCompatActivity implements ZWHttpCallback {
         findViewById(R.id.bEnableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-        //        Zuwagon.StartTracking(MainActivity.this, "12345",MainActivity.this);
-        Zuwagon.getFastLocation(MainActivity.this);
+                Location location = new Location("");
+                location.setLatitude(23.8893);
+                location.setLongitude(73.986);
+                Zuwagon.PickUp_order(MainActivity.this, location, "42334", "4232");
+                //                        Zuwagon.StartTracking(MainActivity.this, "12345");
+//                Zuwagon.getFastLocation(MainActivity.this);
             }
         });
 
         findViewById(R.id.bDisableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Zuwagon.StopTracking(MainActivity.this, "12345",MainActivity.this);
+                Location location = new Location("");
+                location.setLatitude(23.8893);
+                location.setLongitude(73.986);
+                Zuwagon.Drop_order(MainActivity.this, location, "42334", "4232");
+
+                //                Zuwagon.StopTracking_Http(MainActivity.this, "12345");
             }
         });
 
@@ -113,6 +123,7 @@ Location Updates.
         // Add activity scope callbacks
         Zuwagon.addStatusCallback(zwStatusCallback, true);
         Zuwagon.addLocationProcessor(showLocationInTextView);
+        Zuwagon.setInterface(MainActivity.this);
     }
 
     @Override
@@ -176,14 +187,29 @@ Location Updates.
         }
     };
 
+    /*
+     *
+     * */
     @Override
     public void HttpErrorMsg(String msg) {
-        Log.e("HttpErrorMsg",">>>   "+msg);
+        Log.e("HttpErrorMsg", ">>>   " + msg);
     }
 
     @Override
     public void HttpResponseMsg(JSONObject jsonObject) {
-        Log.e("HttpResponseMsg",">>>   "+jsonObject);
+        Log.e("HttpResponseMsg", ">>>   " + jsonObject);
+
+    }
+
+    @Override
+    public void Pick_DropResponse(JSONObject object) {
+        Log.e("Pick_DropResponse", ">>>   " + object);
+
+    }
+
+    @Override
+    public void Pick_Droperror(String err) {
+        Log.e("Pick_Droperror", ">>>   " + err);
 
     }
 }
