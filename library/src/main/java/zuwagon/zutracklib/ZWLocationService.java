@@ -228,7 +228,7 @@ public class ZWLocationService extends Service {
                     }
                 }).start();
             } else {
-                Log.d(TAG, "ZWLocationService$locationCallback.onLocationResult TWICE location = " + location);
+                Log.d(TAG, "ZWLocationService$locationCallback.onLocationResult kTWICE location = " + location);
             }
         }
     };

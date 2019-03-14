@@ -21,7 +21,7 @@ public class ZWSocket {
     private static boolean mSocketAuthenticated;
     private static final String SOCKET_TAG = "Socket-IO";
 
-    private static final String authToken = "Bearer " + Zuwagon._apiKey;
+    private static final String authToken = Zuwagon._apiKey;
     private static final String serverURL = BASE_URL;
 
     private static final String imei = Zuwagon._riderId;

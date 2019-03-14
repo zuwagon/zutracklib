@@ -21,8 +21,8 @@ public class App extends Application {
 
         // Framework initialization. Should be done once, before Zuwagon.startTrack called.
         Zuwagon.configure(getApplicationContext(),
-                "XXXXXXXXXX",
-                "XXXXXXXXXX",
+                "xxxxxxxxxxxx",
+                "xxxxxxxxxxxxxxxx",
                 0,
                 "Channel title",
                 "Notification title",
@@ -32,11 +32,9 @@ public class App extends Application {
                 );
 
         // Add any location processors you want
-
         // Http send implementation.
         // You should check ExampleSendLocationHttpRequest and uncomment following string.
         // Zuwagon.addLocationProcessor(new ExampleSendLocationHttpRequest("my user id", "my api key"));
-
         // Just shows toast
         Zuwagon.addLocationProcessor(new ExampleProcessLocationCallback());
     }
