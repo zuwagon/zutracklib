@@ -21,8 +21,8 @@ public class App extends Application {
 
         // Framework initialization. Should be done once, before Zuwagon.startTrack called.
         Zuwagon.configure(getApplicationContext(),
-                "xxxxxxxxxxxx",
-                "xxxxxxxxxxxxxxxx",
+                "863664034281773",
+                "gEWHxlE236HaB94emky6XflShu4Z",
                 0,
                 "Channel title",
                 "Notification title",

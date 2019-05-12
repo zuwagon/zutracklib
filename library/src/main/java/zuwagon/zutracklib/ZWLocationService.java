@@ -31,11 +31,13 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import static zuwagon.zutracklib.Constants.MIN_DISTANCE;
 import static zuwagon.zutracklib.Constants.TAG;
 
 /**
  * Location flow service. Main part of framework. 90% functionality is here.
  */
+
 public class ZWLocationService extends Service {
 
     private Thread serviceThread = null;
@@ -87,6 +89,8 @@ public class ZWLocationService extends Service {
             final LocationRequest locationRequest = LocationRequest.create();
             locationRequest.setInterval(Constants.DEFAULT_LOCATION_UPDATE_INTERVAL_MS);
             locationRequest.setFastestInterval(Constants.DEFAULT_LOCATION_UPDATE_FASTEST_INTERVAL_MS);
+            locationRequest.setSmallestDisplacement(MIN_DISTANCE);
+
             locationRequest.setPriority(Constants.DEFAULT_LOCATION_PRIORITY);
 
             LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
@@ -113,7 +117,7 @@ public class ZWLocationService extends Service {
                     stopSelf();
 
                     if (e instanceof ResolvableApiException) {
-                        PendingIntent pendingIntent = ((ResolvableApiException)e).getResolution();
+                        PendingIntent pendingIntent = ((ResolvableApiException) e).getResolution();
                         Intent intent = new Intent(ZWLocationService.this, ZWResolutionActivity.class);
                         intent.putExtra("option", Constants.RESOLUTION_OPTION_HARDWARE);
                         intent.putExtra("resolution", pendingIntent);
@@ -170,13 +174,15 @@ public class ZWLocationService extends Service {
         if (serviceThread != null) {
             try {
                 serviceThread.interrupt();
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
         }
 
         if (fusedLocationProviderClient != null) {
             try {
                 fusedLocationProviderClient.removeLocationUpdates(locationCallback);
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
             fusedLocationProviderClient = null;
         }
 
@@ -248,7 +254,8 @@ public class ZWLocationService extends Service {
                 Constants.FOREGROUND_NOTIFICATION_CHANNEL_ID);
 
         b.setOngoing(true);
-        if (Zuwagon._notificationSmallIconRes != 0) b.setSmallIcon(Zuwagon._notificationSmallIconRes);
+        if (Zuwagon._notificationSmallIconRes != 0)
+            b.setSmallIcon(Zuwagon._notificationSmallIconRes);
         if (Zuwagon._notificationTitle != null) b.setContentTitle(Zuwagon._notificationTitle);
         if (Zuwagon._notificationText != null) b.setContentText(Zuwagon._notificationText);
         if (Zuwagon._notificationTicker != null) b.setTicker(Zuwagon._notificationTicker);
@@ -301,11 +308,11 @@ public class ZWLocationService extends Service {
                     }
                     Thread.sleep(Constants.NO_LOCATION_WARNING_INTERVAL_MS);
                 }
-            } catch (InterruptedException ignored) { }
+            } catch (InterruptedException ignored) {
+            }
 
             if (serviceThread == this) serviceThread = null;
             Log.d(TAG, "ZWLocationService$ServiceThread #" + threadId + " destroyed");
         }
     }
-
 }
