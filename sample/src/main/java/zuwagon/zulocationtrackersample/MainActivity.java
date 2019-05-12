@@ -34,24 +34,16 @@ public class MainActivity extends AppCompatActivity implements ZWHttpCallback {
         findViewById(R.id.bEnableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Location location = new Location("");
-                location.setLatitude(23.8893);
-                location.setLongitude(73.986);
-                Zuwagon.PickUp_order(MainActivity.this, location, "42334", "4232");
-                //                        Zuwagon.StartTracking(MainActivity.this, "12345");
-//                Zuwagon.getFastLocation(MainActivity.this);
+
+                Zuwagon.StartTracking(MainActivity.this, "12345");
             }
         });
+
 
         findViewById(R.id.bDisableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Location location = new Location("");
-                location.setLatitude(23.8893);
-                location.setLongitude(73.986);
-                Zuwagon.Drop_order(MainActivity.this, location, "42334", "4232");
-
-                //                Zuwagon.StopTracking_Http(MainActivity.this, "12345");
+                Zuwagon.StopTracking(MainActivity.this, "12345");
             }
         });
 
@@ -108,13 +100,6 @@ Location Updates.
             }
         });
 
-//        findViewById(R.id.bCauseAppCrash).setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                // Encouraging application crash with division by zero.
-//                int a = 22 / 0;
-//            }
-//        });
     }
 
     @Override
@@ -191,25 +176,25 @@ Location Updates.
      *
      * */
     @Override
-    public void HttpErrorMsg(String msg) {
+    public void HttpErrorMsg(String type,String msg) {
+        Log.e("HttpErrorMsg", ">>>type   " + type);
         Log.e("HttpErrorMsg", ">>>   " + msg);
     }
 
     @Override
-    public void HttpResponseMsg(JSONObject jsonObject) {
+    public void HttpResponseMsg(String type,JSONObject jsonObject) {
+        Log.e("HttpResponseMsg", ">>>type   " + type);
         Log.e("HttpResponseMsg", ">>>   " + jsonObject);
 
     }
 
-    @Override
-    public void Pick_DropResponse(JSONObject object) {
-        Log.e("Pick_DropResponse", ">>>   " + object);
+    public void PickUp(View view) {
+        Zuwagon.PickUp_order(MainActivity.this, "42334", "4232");
 
     }
 
-    @Override
-    public void Pick_Droperror(String err) {
-        Log.e("Pick_Droperror", ">>>   " + err);
 
+    public void Drop(View view) {
+        Zuwagon.Drop_order(MainActivity.this, "42334", "4232");
     }
 }

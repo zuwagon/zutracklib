@@ -144,7 +144,7 @@ public class ZWResolutionActivity extends Activity {
                 Zuwagon.startTrackingService(this);
             } else if (callApis) {
                 if (start_stop_action.equalsIgnoreCase("END")) {
-                    Zuwagon.StopTracking_Http(this, Group_ID);
+                    Zuwagon.StopTracking(this, Group_ID);
                     //          Zuwagon.StopTracking(this, Group_ID, zwHttpCallback);
                 } else {
                     Zuwagon.StartTracking(this, Group_ID);

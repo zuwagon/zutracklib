@@ -20,6 +20,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -53,8 +54,8 @@ public class Zuwagon {
     static String _notificationTitle = null;
     static String _notificationText = null;
     static String _notificationTicker = null;
-    public static String _riderId = null;
-    public static String _apiKey = null;
+    static String _riderId = null;
+    static String _apiKey = null;
 
     static int _rationaleTextRes = R.string.default_rationale_access_fine_location;
     static int _rationalePositiveButtonRes = R.string.default_rationale_positive_button;
@@ -83,7 +84,8 @@ public class Zuwagon {
      * @param rationaleTextRes           String resource id of location permissions rationale text.
      * @param rationalePositiveButtonRes String resource of 'OK/GOT IT' button.
      */
-    public static final void configure(final Context context,
+
+    public static  void configure(final Context context,
                                        String riderId,
                                        String apiKey,
                                        @DrawableRes int notificationSmallIconRes,
@@ -96,7 +98,7 @@ public class Zuwagon {
     ) {
         _config = PreferenceManager.getDefaultSharedPreferences(context);
         _riderId = riderId;
-        _apiKey = apiKey;
+        _apiKey = "Bearer " + apiKey;
         _notificationSmallIconRes = notificationSmallIconRes != 0 ? notificationSmallIconRes : R.drawable.ic_service_notify;
         _notificationChannelTitle = notificationChannelTitle;
         _notificationTitle = notificationTitle;
@@ -126,7 +128,7 @@ public class Zuwagon {
      *
      * @param context Application or activity context.
      */
-    public static final void startTrackingService(Context context) {
+    static  void startTrackingService(Context context) {
         setNeedServiceStarted(true);
         ZWLocationService.start(context);
         ZWAlarmReceiver.setupAlarm(context, Constants.RECREATE_SERVICE_ON_DESTROY_DELAY_MS);
@@ -138,6 +140,7 @@ public class Zuwagon {
      *
      * @param context Application or activity context.
      */
+
     public static final void stopTrackingService(Context context) {
         setNeedServiceStarted(false);
         ZWAlarmReceiver.clearAlarm(context);
@@ -302,19 +305,19 @@ public class Zuwagon {
     }
 
     public static String StartTracking(Context context, String group_ID) {
-        //  try {
-        if (_needServiceStarted) {
-            Log.e("StartTracking", "if    ");
-            return "Tracking also started";
-        } else {
-            Log.e("StartTracking", "else   ");
-            StartTracking_http(context, group_ID);
-            return "Tracking started";
-        }
-        /*} catch (Exception e) {
+        try {
+            if (_needServiceStarted) {
+                Log.e("StartTracking", "if    ");
+                return "Tracking also started";
+            } else {
+                Log.e("StartTracking", "else   ");
+                StartTracking_http(context, group_ID);
+                return "Tracking started";
+            }
+        } catch (Exception e) {
             Log.e("StartTracking", "exception   ");
             return "System error";
-        }*/
+        }
     }
 
     private static void StartTracking_http(final Context context, final String group_ID) {
@@ -359,7 +362,7 @@ public class Zuwagon {
                     if (loc != null) {
                         callStartAPI(context, loc, group_ID);
                     } else {
-                        zwHttpCallback2.HttpErrorMsg("Location not available");
+                        zwHttpCallback2.HttpErrorMsg("START", "Location not available");
                     }
                 }
             });
@@ -400,7 +403,7 @@ public class Zuwagon {
             public void onResponse(JSONObject response) {
                 Log.e("onResponse", "onResponse   " + response);
                 startTrackingService(context);
-                zwHttpCallback2.HttpResponseMsg(response);
+                zwHttpCallback2.HttpResponseMsg("START", response);
             }
         }, new Response.ErrorListener() {
             @Override
@@ -409,7 +412,7 @@ public class Zuwagon {
                 if (error.networkResponse.data != null) {
                     try {
                         String body = new String(error.networkResponse.data, "UTF-8");
-                        zwHttpCallback2.HttpErrorMsg(body);
+                        zwHttpCallback2.HttpErrorMsg("START", body);
                         Log.e("onErrorResponse", "onErrorResponse  body " + body);
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
@@ -439,7 +442,8 @@ public class Zuwagon {
     }
 
 
-    public static void StopTracking_Http(final Context context, final String G_id) {
+    public static void StopTracking(final Context context, final String G_id) {
+        setNeedServiceStarted(false);
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
             Intent intent = new Intent(context, ZWResolutionActivity.class);
@@ -484,7 +488,7 @@ public class Zuwagon {
                     if (loc != null) {
                         callStopAPI(context, loc, G_id);
                     } else {
-                        zwHttpCallback2.HttpErrorMsg("Location not available");
+                        zwHttpCallback2.HttpErrorMsg("END", "Location not available");
                     }
                 }
             });
@@ -514,7 +518,7 @@ public class Zuwagon {
             public void onResponse(JSONObject response) {
                 Log.e("onResponse", "onResponse   " + response);
                 stopTrackingService(context);
-                zwHttpCallback2.HttpResponseMsg(response);
+                zwHttpCallback2.HttpResponseMsg("END", response);
             }
         }, new Response.ErrorListener() {
             @Override
@@ -525,7 +529,7 @@ public class Zuwagon {
                 if (error.networkResponse.data != null) {
                     try {
                         String body = new String(error.networkResponse.data, "UTF-8");
-                        zwHttpCallback2.HttpErrorMsg(body);
+                        zwHttpCallback2.HttpErrorMsg("END", body);
                         Log.e("onErrorResponse", "onErrorResponse  body " + body);
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
@@ -553,125 +557,162 @@ public class Zuwagon {
         queue.add(request);
     }
 
-    public static void PickUp_order(final Context context, Location location, String group_id, String order_id) {
-        Log.e("PickUp_order", "PickUp_order>>  " + location.toString());
-        RequestQueue mRequestQueue = Volley.newRequestQueue(context);
-        JSONObject param = new JSONObject();
-        try {
-            JSONObject loc = new JSONObject();
-            loc.put("lat", location.getLatitude());
-            loc.put("lon", location.getLongitude());
-            param.put("group_id", group_id);
-            param.put("rider_id", _riderId);
-            param.put("order_id", order_id);
-            param.put("type", "PICKUP");
-            param.put("loc", loc);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+    public static void PickUp_order(final Context context, final String group_id, final String order_id) {
+        Log.e("PickUp_order", "PickUp_order>>  ");
 
-        JsonObjectRequest jsonObjReq = new JsonObjectRequest(
-                Request.Method.POST, BASE_URL + "/order/delivery", param, new Response.Listener<JSONObject>() {
+        SingleShotLocationProvider.requestSingleUpdate(context, new SingleShotLocationProvider.LocationCallback() {
             @Override
-            public void onResponse(JSONObject response) {
-                zwHttpCallback2.Pick_DropResponse(response);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("onErrorResponse", "onErrorResponse   " + error);
-                if (error.networkResponse.data != null) {
+            public void onNewLocationAvailable(SingleShotLocationProvider.GPSCoordinates location) {
+                Log.e("getFastLocation", "getFastLocation  location " + location.latitude);
+                Log.e("getFastLocation", "getFastLocation  location " + location.longitude);
+                Location loc = new Location("");
+                loc = getLocation(location);
+                if (loc != null) {
+
+
+                    RequestQueue mRequestQueue = Volley.newRequestQueue(context);
+                    JSONObject param = new JSONObject();
                     try {
-                        String body = new String(error.networkResponse.data, "UTF-8");
-                        zwHttpCallback2.Pick_Droperror(body);
-                        Log.e("onErrorResponse", "onErrorResponse  body " + body);
-                    } catch (UnsupportedEncodingException e) {
+                        JSONObject loc_obj = new JSONObject();
+                        loc_obj.put("lat", loc.getLatitude());
+                        loc_obj.put("lon", loc.getLongitude());
+                        param.put("group_id", group_id);
+                        param.put("rider_id", _riderId);
+                        param.put("order_id", order_id);
+                        param.put("type", "PICKUP");
+                        param.put("loc", loc_obj);
+                    } catch (JSONException e) {
                         e.printStackTrace();
                     }
+
+                    JsonObjectRequest jsonObjReq = new JsonObjectRequest(
+                            Request.Method.POST, BASE_URL + "/order/delivery", param, new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            zwHttpCallback2.HttpResponseMsg("PICKUP", response);
+                        }
+                    }, new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.e("onErrorResponse", "onErrorResponse   " + error);
+                            if (error.networkResponse.data != null) {
+                                try {
+                                    String body = new String(error.networkResponse.data, "UTF-8");
+                                    zwHttpCallback2.HttpErrorMsg("PICKUP", body);
+                                    Log.e("onErrorResponse", "onErrorResponse  body " + body);
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }) {
+
+                        /**
+                         * Passing some request headers
+                         * */
+                        @Override
+                        public Map<String, String> getHeaders() throws AuthFailureError {
+                            HashMap<String, String> headers = new HashMap<String, String>();
+                            try {
+                                headers.put("Authorization", _apiKey);
+                                headers.put("Content-Type", "application/json");
+                                headers.put("source", "x-order-tracking");
+                                return headers;
+                            } catch (Exception e) {
+                                return null;
+                            }
+                        }
+
+                    };
+
+                    mRequestQueue.add(jsonObjReq);
+
+
+                } else {
+                    zwHttpCallback2.HttpErrorMsg("START", "Location not available");
                 }
             }
-        }) {
+        });
 
-            /**
-             * Passing some request headers
-             * */
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                HashMap<String, String> headers = new HashMap<String, String>();
-                try {
-                    headers.put("Authorization", _apiKey);
-                    headers.put("Content-Type", "application/json");
-                    headers.put("source", "x-order-tracking");
-                    return headers;
-                } catch (Exception e) {
-                    return null;
-                }
-            }
-
-        };
-
-        mRequestQueue.add(jsonObjReq);
     }
 
-    public static void Drop_order(final Context context, Location location, String group_id, String order_id) {
-        Log.e("PickUp_order", "PickUp_order>>  " + location.toString());
-        RequestQueue mRequestQueue = Volley.newRequestQueue(context);
-        JSONObject param = new JSONObject();
-        try {
-            JSONObject loc = new JSONObject();
-            loc.put("lat", location.getLatitude());
-            loc.put("lon", location.getLongitude());
-            param.put("group_id", group_id);
-            param.put("rider_id", _riderId);
-            param.put("order_id", order_id);
-            param.put("type", "DROP");
-            param.put("loc", loc);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+    public static void Drop_order(final Context context,final String group_id,final String order_id) {
+        Log.e("PickUp_order", "PickUp_order>>  " );
+        SingleShotLocationProvider.requestSingleUpdate(context, new SingleShotLocationProvider.LocationCallback() {
+            @Override
+            public void onNewLocationAvailable(SingleShotLocationProvider.GPSCoordinates location) {
+                Log.e("getFastLocation", "getFastLocation  location " + location.latitude);
+                Log.e("getFastLocation", "getFastLocation  location " + location.longitude);
 
-        JsonObjectRequest jsonObjReq = new JsonObjectRequest(
-                Request.Method.POST, BASE_URL + "/order/delivery", param, new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                zwHttpCallback2.Pick_DropResponse(response);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("onErrorResponse", "onErrorResponse   " + error);
-                if (error.networkResponse.data != null) {
+                Location loc = new Location("");
+                loc = getLocation(location);
+                if (loc != null) {
+
+                    RequestQueue mRequestQueue = Volley.newRequestQueue(context);
+                    JSONObject param = new JSONObject();
                     try {
-                        String body = new String(error.networkResponse.data, "UTF-8");
-                        zwHttpCallback2.Pick_Droperror(body);
-                        Log.e("onErrorResponse", "onErrorResponse  body " + body);
-                    } catch (UnsupportedEncodingException e) {
+                        JSONObject loc_obj = new JSONObject();
+                        loc_obj.put("lat", loc.getLatitude());
+                        loc_obj.put("lon", loc.getLongitude());
+                        param.put("group_id", group_id);
+                        param.put("rider_id", _riderId);
+                        param.put("order_id", order_id);
+                        param.put("type", "DROP");
+                        param.put("loc", loc_obj);
+
+                    } catch (JSONException e) {
                         e.printStackTrace();
                     }
+
+                    JsonObjectRequest jsonObjReq = new JsonObjectRequest(
+                            Request.Method.POST, BASE_URL + "/order/delivery", param, new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            zwHttpCallback2.HttpResponseMsg("DROP", response);
+                        }
+                    }, new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.e("onErrorResponse", "onErrorResponse   " + error);
+                            if (error.networkResponse.data != null) {
+                                try {
+                                    String body = new String(error.networkResponse.data, "UTF-8");
+                                    zwHttpCallback2.HttpErrorMsg("DROP", body);
+                                    Log.e("onErrorResponse", "onErrorResponse  body " + body);
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }) {
+
+                        /**
+                         * Passing some request headers
+                         * */
+                        @Override
+                        public Map<String, String> getHeaders() throws AuthFailureError {
+                            HashMap<String, String> headers = new HashMap<String, String>();
+                            try {
+                                headers.put("Authorization", _apiKey);
+                                headers.put("Content-Type", "application/json");
+                                headers.put("source", "x-order-tracking");
+                                return headers;
+                            } catch (Exception e) {
+                                return null;
+                            }
+                        }
+
+                    };
+
+                    mRequestQueue.add(jsonObjReq);
+
+
+
+                } else {
+                    zwHttpCallback2.HttpErrorMsg("START", "Location not available");
                 }
             }
-        }) {
+        });
 
-            /**
-             * Passing some request headers
-             * */
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                HashMap<String, String> headers = new HashMap<String, String>();
-                try {
-                    headers.put("Authorization", _apiKey);
-                    headers.put("Content-Type", "application/json");
-                    headers.put("source", "x-order-tracking");
-                    return headers;
-                } catch (Exception e) {
-                    return null;
-                }
-            }
-
-        };
-
-        mRequestQueue.add(jsonObjReq);
     }
-
-
 }
