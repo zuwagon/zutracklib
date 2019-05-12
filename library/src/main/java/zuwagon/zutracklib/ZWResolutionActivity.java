@@ -51,6 +51,10 @@ public class ZWResolutionActivity extends Activity {
         Intent args = getIntent();
 
         int option = args.getIntExtra("option", -1);
+        Group_ID = args.getStringExtra("Group_ID");
+        start_stop_action = args.getStringExtra("START_STOP");
+
+        onGPS = args.getBooleanExtra(ONGPS, false);
 
         switch (option) {
             case Constants.RESOLUTION_OPTION_HARDWARE: {
@@ -65,10 +69,6 @@ public class ZWResolutionActivity extends Activity {
             }
             case Constants.RESOLUTION_OPTION_PERMISSIONS: {
                 callApis = args.getBooleanExtra(CALL_API, false);
-                Group_ID = args.getStringExtra("Group_ID");
-                start_stop_action = args.getStringExtra("START_STOP");
-
-                onGPS = args.getBooleanExtra(ONGPS, false);
                 shouldStartTracking = args.getBooleanExtra("start_tracking", false);
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                         Manifest.permission.ACCESS_FINE_LOCATION)) {

@@ -706,7 +706,7 @@ public class Zuwagon {
             public void onFailure(@NonNull Exception e) {
                 PendingIntent pendingIntent = ((ResolvableApiException) e).getResolution();
                 Intent intent = new Intent(context, ZWResolutionActivity.class);
-                intent.putExtra("option", Constants.RESOLUTION_OPTION_PERMISSIONS);
+                intent.putExtra("option", Constants.RESOLUTION_OPTION_HARDWARE);
                 intent.putExtra("Group_ID", group_ID);
                 intent.putExtra(ONGPS, true);
                 intent.putExtra(START_STOP, start_stop);
