@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static zuwagon.zutracklib.Constants.LAST_LOCATION;
 import static zuwagon.zutracklib.Constants.MIN_DISTANCE;
 import static zuwagon.zutracklib.Constants.ONGPS;
 import static zuwagon.zutracklib.Constants.START_STOP;
@@ -689,7 +690,18 @@ public class Zuwagon {
 
                                 break;
                             case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
-
+                                if (start_stop.equalsIgnoreCase("STOP")) {
+                                    String s = config().getString(LAST_LOCATION, null);
+                                    if (s != null) {
+                                        String[] a = s.split(",");
+                                        double lat = Double.parseDouble(a[0]);
+                                        double log = Double.parseDouble(a[1]);
+                                        Location location1 = new Location("");
+                                        location1.setLatitude(lat);
+                                        location1.setLongitude(log);
+                                        callStopAPI(context, location1, group_ID);
+                                    }
+                                }
                                 break;
                             case ZWInstantLocationCallback.PERMISSION_REQUEST_NEED:
                                 zwHttpCallback2.HttpErrorMsg("START", "Location not available");

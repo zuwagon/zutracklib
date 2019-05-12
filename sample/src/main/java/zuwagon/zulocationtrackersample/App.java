@@ -29,7 +29,7 @@ public class App extends Application {
                 "Notification text",
                 "Notification ticker",
                 0, 0
-                );
+        );
 
         // Add any location processors you want
         // Http send implementation.
