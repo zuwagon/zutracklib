@@ -1,6 +1,7 @@
 package zuwagon.zutracklib;
 
 import android.Manifest;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,6 +12,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.annotation.DrawableRes;
+import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -23,9 +25,16 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,6 +44,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static zuwagon.zutracklib.Constants.MIN_DISTANCE;
+import static zuwagon.zutracklib.Constants.ONGPS;
+import static zuwagon.zutracklib.Constants.START_STOP;
 import static zuwagon.zutracklib.Constants.TAG;
 import static zuwagon.zutracklib.ZWStatusCallback.BASE_URL;
 import static zuwagon.zutracklib.ZWStatusCallback.CALL_API;
@@ -70,6 +82,7 @@ public class Zuwagon {
     static final ArrayList<ZWProcessLocationCallback> processLocationCallbacks = new ArrayList<>();
 
     private static Thread.UncaughtExceptionHandler defaultGlobalExceptionHandler;
+    private boolean isGpsenabled = false;
 
 
     /**
@@ -85,16 +98,16 @@ public class Zuwagon {
      * @param rationalePositiveButtonRes String resource of 'OK/GOT IT' button.
      */
 
-    public static  void configure(final Context context,
-                                       String riderId,
-                                       String apiKey,
-                                       @DrawableRes int notificationSmallIconRes,
-                                       String notificationChannelTitle,
-                                       String notificationTitle,
-                                       String notificationText,
-                                       String notificationTicker,
-                                       @StringRes int rationaleTextRes,
-                                       @StringRes int rationalePositiveButtonRes
+    public static void configure(final Context context,
+                                 String riderId,
+                                 String apiKey,
+                                 @DrawableRes int notificationSmallIconRes,
+                                 String notificationChannelTitle,
+                                 String notificationTitle,
+                                 String notificationText,
+                                 String notificationTicker,
+                                 @StringRes int rationaleTextRes,
+                                 @StringRes int rationalePositiveButtonRes
     ) {
         _config = PreferenceManager.getDefaultSharedPreferences(context);
         _riderId = riderId;
@@ -128,7 +141,7 @@ public class Zuwagon {
      *
      * @param context Application or activity context.
      */
-    static  void startTrackingService(Context context) {
+    static void startTrackingService(Context context) {
         setNeedServiceStarted(true);
         ZWLocationService.start(context);
         ZWAlarmReceiver.setupAlarm(context, Constants.RECREATE_SERVICE_ON_DESTROY_DELAY_MS);
@@ -311,6 +324,7 @@ public class Zuwagon {
                 return "Tracking also started";
             } else {
                 Log.e("StartTracking", "else   ");
+
                 StartTracking_http(context, group_ID);
                 return "Tracking started";
             }
@@ -333,39 +347,7 @@ public class Zuwagon {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } else {
-           /* instantLocation(context, new ZWInstantLocationCallback() {
-                @Override
-                public void onResult(int result, Location location) {
-                    switch (result) {
-                        case ZWInstantLocationCallback.OK:
-                            Log.e("StartTracking_http", "StartTracking_http " + location.toString());
-                            callStartAPI(context, location, group_ID, zwHttpCallback);
-                            break;
-                        case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
-
-                            break;
-                        case ZWInstantLocationCallback.PERMISSION_REQUEST_NEED:
-
-                            break;
-                    }
-                }
-            });*/
-
-            SingleShotLocationProvider.requestSingleUpdate(context, new SingleShotLocationProvider.LocationCallback() {
-                @Override
-                public void onNewLocationAvailable(SingleShotLocationProvider.GPSCoordinates location) {
-                    Log.e("getFastLocation", "getFastLocation  location " + location.latitude);
-                    Log.e("getFastLocation", "getFastLocation  location " + location.longitude);
-
-                    Location loc = new Location("");
-                    loc = getLocation(location);
-                    if (loc != null) {
-                        callStartAPI(context, loc, group_ID);
-                    } else {
-                        zwHttpCallback2.HttpErrorMsg("START", "Location not available");
-                    }
-                }
-            });
+            enableGPS(context, group_ID, "START");
         }
     }
 
@@ -424,6 +406,7 @@ public class Zuwagon {
             /**
              * Passing some request headers
              * */
+
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 HashMap<String, String> headers = new HashMap<>();
@@ -455,44 +438,7 @@ public class Zuwagon {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } else {
-
-/*
-            instantLocation(context, new ZWInstantLocationCallback() {
-                @Override
-                public void onResult(int result, Location location) {
-                    switch (result) {
-                        case ZWInstantLocationCallback.OK:
-                            Log.e("StopTracking", "StopTracking " + location.toString());
-                            callStopAPI(context, location, G_id);
-                            break;
-                        case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
-
-
-                            break;
-                        case ZWInstantLocationCallback.PERMISSION_REQUEST_NEED:
-
-
-                            break;
-                    }
-                }
-            });
-*/
-            SingleShotLocationProvider.requestSingleUpdate(context, new SingleShotLocationProvider.LocationCallback() {
-                @Override
-                public void onNewLocationAvailable(SingleShotLocationProvider.GPSCoordinates location) {
-                    Log.e("getFastLocation", "getFastLocation  location " + location.latitude);
-                    Log.e("getFastLocation", "getFastLocation  location " + location.longitude);
-
-                    Location loc = new Location("");
-                    loc = getLocation(location);
-                    if (loc != null) {
-                        callStopAPI(context, loc, G_id);
-                    } else {
-                        zwHttpCallback2.HttpErrorMsg("END", "Location not available");
-                    }
-                }
-            });
-
+            enableGPS(context, G_id, "STOP");
         }
     }
 
@@ -636,8 +582,8 @@ public class Zuwagon {
 
     }
 
-    public static void Drop_order(final Context context,final String group_id,final String order_id) {
-        Log.e("PickUp_order", "PickUp_order>>  " );
+    public static void Drop_order(final Context context, final String group_id, final String order_id) {
+        Log.e("PickUp_order", "PickUp_order>>  ");
         SingleShotLocationProvider.requestSingleUpdate(context, new SingleShotLocationProvider.LocationCallback() {
             @Override
             public void onNewLocationAvailable(SingleShotLocationProvider.GPSCoordinates location) {
@@ -707,12 +653,69 @@ public class Zuwagon {
                     mRequestQueue.add(jsonObjReq);
 
 
-
                 } else {
                     zwHttpCallback2.HttpErrorMsg("START", "Location not available");
                 }
             }
         });
 
+    }
+
+    public static void enableGPS(final Context context, final String group_ID, final String start_stop) {
+
+        final LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setInterval(Constants.DEFAULT_LOCATION_UPDATE_INTERVAL_MS);
+        locationRequest.setFastestInterval(Constants.DEFAULT_LOCATION_UPDATE_FASTEST_INTERVAL_MS);
+        locationRequest.setSmallestDisplacement(MIN_DISTANCE);
+        locationRequest.setPriority(Constants.DEFAULT_LOCATION_PRIORITY);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest);
+        SettingsClient client = LocationServices.getSettingsClient(context);
+        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
+        task.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
+            @Override
+            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                instantLocation(context, new ZWInstantLocationCallback() {
+                    @Override
+                    public void onResult(int result, Location location) {
+                        switch (result) {
+                            case ZWInstantLocationCallback.OK:
+                                Log.e("StartTracking_http", "StartTracking_http " + location.toString());
+                                if (start_stop.equalsIgnoreCase("START")) {
+                                    callStartAPI(context, location, group_ID);
+                                } else {
+                                    callStopAPI(context, location, group_ID);
+                                }
+
+                                break;
+                            case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
+
+                                break;
+                            case ZWInstantLocationCallback.PERMISSION_REQUEST_NEED:
+                                zwHttpCallback2.HttpErrorMsg("START", "Location not available");
+
+                                break;
+                        }
+                    }
+                });
+            }
+        });
+
+        task.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                PendingIntent pendingIntent = ((ResolvableApiException) e).getResolution();
+                Intent intent = new Intent(context, ZWResolutionActivity.class);
+                intent.putExtra("option", Constants.RESOLUTION_OPTION_HARDWARE);
+                intent.putExtra("Group_ID", group_ID);
+                intent.putExtra(ONGPS, true);
+                intent.putExtra(START_STOP, start_stop);
+                intent.putExtra("resolution", pendingIntent);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+
+                Log.e("SHYAM", "e   " + e.getMessage());
+            }
+        });
     }
 }
