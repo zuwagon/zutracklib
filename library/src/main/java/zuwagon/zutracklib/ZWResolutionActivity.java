@@ -15,7 +15,10 @@ import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.widget.Toast;
 
+
+import java.util.ArrayList;
 import static zuwagon.zutracklib.Constants.ONGPS;
+
 import static zuwagon.zutracklib.Constants.TAG;
 import static zuwagon.zutracklib.ZWStatusCallback.CALL_API;
 
@@ -34,6 +37,8 @@ public class ZWResolutionActivity extends Activity {
     private String start_stop_action;
     private boolean callApis = false;
     private String Group_ID = "";
+
+    private ArrayList<Order> ORDER_LIST = new ArrayList<>();
     private boolean onGPS = false;
 
     public static final boolean isRunning() {
@@ -69,6 +74,12 @@ public class ZWResolutionActivity extends Activity {
             }
             case Constants.RESOLUTION_OPTION_PERMISSIONS: {
                 callApis = args.getBooleanExtra(CALL_API, false);
+
+                Group_ID = args.getStringExtra("Group_ID");
+                ORDER_LIST = (ArrayList<Order>)getIntent().getSerializableExtra("ORDER_LIST");
+//                ORDER_LIST = args.getObjectArrayListExtra("ORDER_LIST");
+                start_stop_action = args.getStringExtra("START_STOP");
+
                 shouldStartTracking = args.getBooleanExtra("start_tracking", false);
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                         Manifest.permission.ACCESS_FINE_LOCATION)) {
@@ -151,7 +162,7 @@ public class ZWResolutionActivity extends Activity {
                     Zuwagon.StopTracking(this, Group_ID);
                     //          Zuwagon.StopTracking(this, Group_ID, zwHttpCallback);
                 } else {
-                    Zuwagon.StartTracking(this, Group_ID);
+                    Zuwagon.StartTracking(this, Group_ID, ORDER_LIST);
 //                    Zuwagon.StartTracking(this, Group_ID, zwHttpCallback);
                 }
 

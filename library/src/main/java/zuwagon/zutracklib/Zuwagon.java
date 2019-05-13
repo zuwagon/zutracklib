@@ -38,6 +38,7 @@ import com.google.android.gms.tasks.Task;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -318,7 +319,7 @@ public class Zuwagon {
         zwHttpCallback2 = zwHttpCallback;
     }
 
-    public static String StartTracking(Context context, String group_ID) {
+    public static String StartTracking(Context context, String group_ID, ArrayList order_list) {
         try {
             if (_needServiceStarted) {
                 Log.e("StartTracking", "if    ");
@@ -326,7 +327,8 @@ public class Zuwagon {
             } else {
                 Log.e("StartTracking", "else   ");
 
-                StartTracking_http(context, group_ID);
+                StartTracking_http(context, group_ID, order_list);
+
                 return "Tracking started";
             }
         } catch (Exception e) {
@@ -335,7 +337,7 @@ public class Zuwagon {
         }
     }
 
-    private static void StartTracking_http(final Context context, final String group_ID) {
+    private static void StartTracking_http(final Context context, final String group_ID, final ArrayList order_list) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
             Intent intent = new Intent(context, ZWResolutionActivity.class);
@@ -345,6 +347,7 @@ public class Zuwagon {
 //            intent.putExtra(ZWSTATUSCALLBACK, zwHttpCallback);
             intent.putExtra("START_STOP", "START");
             intent.putExtra("Group_ID", group_ID);
+            intent.putExtra("ORDER_LIST", order_list);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } else {
@@ -363,7 +366,7 @@ public class Zuwagon {
         }
     }
 
-    private static void callStartAPI(final Context context, Location location, String G_id) {
+    private static void callStartAPI(final Context context, Location location, String G_id, ArrayList order_list) {
 
         RequestQueue queue = Volley.newRequestQueue(context);
         JSONObject object = new JSONObject();
@@ -372,11 +375,19 @@ public class Zuwagon {
             object.put("rider_id", _riderId);
             object.put("trip", "START");
             object.put("group_id", G_id);
+
             JSONObject loc_obj = new JSONObject();
             loc_obj.put("lat", location.getLatitude());
             loc_obj.put("lon", location.getLongitude());
             object.put("loc", loc_obj);
-
+            JSONArray orderJSONArrray = new JSONArray();
+//            for(Order orde : order_list) {
+//                //necessary code here
+//            }
+            for (int i=0; i < order_list.size(); i++) {
+                orderJSONArrray.put((Order)(order_list.get(i)));
+            }
+            object.put("order_list", orderJSONArrray);
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -583,8 +594,10 @@ public class Zuwagon {
 
     }
 
-    public static void Drop_order(final Context context, final String group_id, final String order_id) {
-        Log.e("PickUp_order", "PickUp_order>>  ");
+
+    public static void Drop_order(final Context context,final String group_id,final String order_id) {
+        Log.e("Drop_order", "Drop_order>>  " );
+
         SingleShotLocationProvider.requestSingleUpdate(context, new SingleShotLocationProvider.LocationCallback() {
             @Override
             public void onNewLocationAvailable(SingleShotLocationProvider.GPSCoordinates location) {

@@ -21,6 +21,7 @@ public class App extends Application {
 
         // Framework initialization. Should be done once, before Zuwagon.startTrack called.
         Zuwagon.configure(getApplicationContext(),
+
                 "XXXXXXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXX",
                 0,
