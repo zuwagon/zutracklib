@@ -16,7 +16,9 @@ import android.util.Log;
 import android.widget.Toast;
 
 
+import java.io.Serializable;
 import java.util.ArrayList;
+
 import static zuwagon.zutracklib.Constants.ONGPS;
 
 import static zuwagon.zutracklib.Constants.TAG;
@@ -40,6 +42,7 @@ public class ZWResolutionActivity extends Activity {
 
     private ArrayList<Order> ORDER_LIST = new ArrayList<>();
     private boolean onGPS = false;
+    private ArrayList<Order> orderlist;
 
     public static final boolean isRunning() {
         return _curInstance != null;
@@ -58,6 +61,7 @@ public class ZWResolutionActivity extends Activity {
         int option = args.getIntExtra("option", -1);
         Group_ID = args.getStringExtra("Group_ID");
         start_stop_action = args.getStringExtra("START_STOP");
+        orderlist = (ArrayList<Order>) args.getSerializableExtra("ORDER_LIST");
 
         onGPS = args.getBooleanExtra(ONGPS, false);
 
@@ -76,7 +80,7 @@ public class ZWResolutionActivity extends Activity {
                 callApis = args.getBooleanExtra(CALL_API, false);
 
                 Group_ID = args.getStringExtra("Group_ID");
-                ORDER_LIST = (ArrayList<Order>)getIntent().getSerializableExtra("ORDER_LIST");
+                ORDER_LIST = (ArrayList<Order>) getIntent().getSerializableExtra("ORDER_LIST");
 //                ORDER_LIST = args.getObjectArrayListExtra("ORDER_LIST");
                 start_stop_action = args.getStringExtra("START_STOP");
 
@@ -169,9 +173,9 @@ public class ZWResolutionActivity extends Activity {
                 Toast.makeText(this, "" + start_stop_action, Toast.LENGTH_SHORT).show();
             } else if (onGPS) {
                 if (start_stop_action.equalsIgnoreCase("START")) {
-                    Zuwagon.enableGPS(ZWResolutionActivity.this, Group_ID, "START");
+                    Zuwagon.enableGPS(ZWResolutionActivity.this, Group_ID, "START", orderlist);
                 } else {
-                    Zuwagon.enableGPS(ZWResolutionActivity.this, Group_ID, "STOP");
+                    Zuwagon.enableGPS(ZWResolutionActivity.this, Group_ID, "STOP", null);
                 }
             }
         } else {

@@ -112,7 +112,12 @@ public class ZWSocket {
     static ZWProcessLocationCallback sendLocationToServer = new ZWProcessLocationCallback() {
         @Override
         public void onNewLocation(final Location newLocation) {
-
+            int speed = (int) ((newLocation.getSpeed() * 3600) / 1000);
+           // Log.e("SPEED", "" + speed);
+            if (speed > 80) {
+                return;
+            }
+            Log.e("SPEED", ">>>>   test " + speed);
             JSONObject loc = new JSONObject();
             try {
                 loc.put("lat", newLocation.getLatitude());
@@ -128,7 +133,7 @@ public class ZWSocket {
                 if (mSocket != null && mSocket.connected())
                     mSocket.emit("tcptrip", response);
 
-                Zuwagon.config().edit().putString(LAST_LOCATION, newLocation.getLatitude()+","+newLocation.getLongitude()).apply();
+                Zuwagon.config().edit().putString(LAST_LOCATION, newLocation.getLatitude() + "," + newLocation.getLongitude()).apply();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
