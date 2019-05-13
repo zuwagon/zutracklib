@@ -17,6 +17,9 @@ import zuwagon.zutracklib.ZWProcessLocationCallback;
 import zuwagon.zutracklib.ZWStatus;
 import zuwagon.zutracklib.ZWStatusCallback;
 import zuwagon.zutracklib.Zuwagon;
+import zuwagon.zutracklib.Order;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements ZWHttpCallback {
 
@@ -30,12 +33,15 @@ public class MainActivity extends AppCompatActivity implements ZWHttpCallback {
 
         tvStatus = findViewById(R.id.tvStatus);
         tvLocation = findViewById(R.id.tvLocation);
-
+        final ArrayList<Order> orderList = new ArrayList<>();
+        orderList.add(new Order("1","22.6882122","75.808748"));
+        orderList.add(new Order("2","22.6882122","75.808748"));
+        orderList.add(new Order("3","22.6882122","75.808748"));
         findViewById(R.id.bEnableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                Zuwagon.StartTracking(MainActivity.this, "12345");
+                Zuwagon.StartTracking(MainActivity.this, "12345", orderList);
             }
         });
 
