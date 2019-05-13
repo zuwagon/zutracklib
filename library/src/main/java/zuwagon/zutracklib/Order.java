@@ -17,4 +17,16 @@ public class Order implements Serializable {
         this.lat = latitude;
         this.lon = longitude;
     }
+
+    public String get_id() {
+        return _id;
+    }
+
+    public String getLat() {
+        return lat;
+    }
+
+    public String getLon() {
+        return lon;
+    }
 }

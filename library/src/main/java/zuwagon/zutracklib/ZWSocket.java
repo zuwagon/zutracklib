@@ -14,6 +14,7 @@ import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
+import static zuwagon.zutracklib.Constants.LAST_LOCATION;
 import static zuwagon.zutracklib.ZWStatusCallback.BASE_URL;
 
 public class ZWSocket {
@@ -31,7 +32,7 @@ public class ZWSocket {
     public static final void connectToServer() {
         try {
             _needPing = true;
-            if(mSocket == null || !mSocket.connected()) {
+            if (mSocket == null || !mSocket.connected()) {
                 mSocket = IO.socket(serverURL);
                 initSocket();
             }
@@ -65,7 +66,8 @@ public class ZWSocket {
                     }
                 }
             }).start();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void sendHeartbeatUpdate(int status) {
@@ -81,7 +83,7 @@ public class ZWSocket {
 //                c_loc.put("time", mLocation.getTime());
 //                heartbeatData.put("c_loc", c_loc);
 //            }
-            if(mSocket != null && mSocket.connected()) {
+            if (mSocket != null && mSocket.connected()) {
                 Log.i(SOCKET_TAG, "heartbeatData " + heartbeatData.toString());
                 mSocket.emit("heartbeat", heartbeatData);
             }
@@ -96,9 +98,10 @@ public class ZWSocket {
             @Override
             public void run() {
                 try {
-                    Thread.sleep(3*60*1000); // Interval in milliseconds
-                    if(_needPing) ZWSocket.sendHeartbeatUpdate(1);
-                } catch (Exception ex) { }
+                    Thread.sleep(3 * 60 * 1000); // Interval in milliseconds
+                    if (_needPing) ZWSocket.sendHeartbeatUpdate(1);
+                } catch (Exception ex) {
+                }
 
                 if (_needPing) ping();
             }
@@ -109,6 +112,12 @@ public class ZWSocket {
     static ZWProcessLocationCallback sendLocationToServer = new ZWProcessLocationCallback() {
         @Override
         public void onNewLocation(final Location newLocation) {
+            int speed = (int) ((newLocation.getSpeed() * 3600) / 1000);
+           // Log.e("SPEED", "" + speed);
+            if (speed > 80) {
+                return;
+            }
+            Log.e("SPEED", ">>>>   test " + speed);
             JSONObject loc = new JSONObject();
             try {
                 loc.put("lat", newLocation.getLatitude());
@@ -121,8 +130,10 @@ public class ZWSocket {
                 response.put("location", loc);
 
                 Log.i(SOCKET_TAG, " Loc " + response.toString());
-                if(mSocket != null && mSocket.connected())
+                if (mSocket != null && mSocket.connected())
                     mSocket.emit("tcptrip", response);
+
+                Zuwagon.config().edit().putString(LAST_LOCATION, newLocation.getLatitude() + "," + newLocation.getLongitude()).apply();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -138,7 +149,7 @@ public class ZWSocket {
                 public void run() {
                     try {
                         Thread.sleep(2000); // Interval in milliseconds
-                        if(_needPing && mSocketAuthenticated) connectToServer();
+                        if (_needPing && mSocketAuthenticated) connectToServer();
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }

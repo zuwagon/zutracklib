@@ -83,4 +83,6 @@ public class Constants {
     public static final int RESOLUTION_OPTION_PERMISSIONS = 2;
 
     public static final String TAG = "zuwagon";
+
+    public static String LAST_LOCATION = "LAST_LOCATION";
 }

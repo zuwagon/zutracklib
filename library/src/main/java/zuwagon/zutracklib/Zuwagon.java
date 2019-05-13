@@ -22,7 +22,6 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.api.ResolvableApiException;
@@ -35,6 +34,8 @@ import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,6 +46,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static zuwagon.zutracklib.Constants.LAST_LOCATION;
 import static zuwagon.zutracklib.Constants.MIN_DISTANCE;
 import static zuwagon.zutracklib.Constants.ONGPS;
 import static zuwagon.zutracklib.Constants.START_STOP;
@@ -336,7 +338,7 @@ public class Zuwagon {
         }
     }
 
-    private static void StartTracking_http(final Context context, final String group_ID, final ArrayList order_list) {
+    private static void StartTracking_http(final Context context, final String group_ID, final ArrayList<Order> order_list) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) !=
                 PackageManager.PERMISSION_GRANTED) {
             Intent intent = new Intent(context, ZWResolutionActivity.class);
@@ -350,7 +352,7 @@ public class Zuwagon {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } else {
-            enableGPS(context, group_ID, "START");
+            enableGPS(context, group_ID, "START", order_list);
         }
     }
 
@@ -365,7 +367,7 @@ public class Zuwagon {
         }
     }
 
-    private static void callStartAPI(final Context context, Location location, String G_id, ArrayList order_list) {
+    private static void callStartAPI(final Context context, Location location, String G_id, ArrayList<Order> order_list) {
 
         RequestQueue queue = Volley.newRequestQueue(context);
         JSONObject object = new JSONObject();
@@ -383,11 +385,15 @@ public class Zuwagon {
 //            for(Order orde : order_list) {
 //                //necessary code here
 //            }
-            for (int i=0; i < order_list.size(); i++) {
-                orderJSONArrray.put((Order)(order_list.get(i)));
+            for (int i = 0; i < order_list.size(); i++) {
+                JSONObject order_obj = new JSONObject();
+                order_obj.put("_id", (order_list.get(i).get_id()));
+                order_obj.put("lat", (order_list.get(i).getLat()));
+                order_obj.put("lon", (order_list.get(i).getLon()));
+                orderJSONArrray.put(order_obj);
             }
             object.put("order_list", orderJSONArrray);
-
+            Log.e("SENDDATA", ">>  " + new Gson().toJson(object));
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -449,7 +455,7 @@ public class Zuwagon {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } else {
-            enableGPS(context, G_id, "STOP");
+            enableGPS(context, G_id, "STOP", null);
         }
     }
 
@@ -594,8 +600,8 @@ public class Zuwagon {
     }
 
 
-    public static void Drop_order(final Context context,final String group_id,final String order_id) {
-        Log.e("Drop_order", "Drop_order>>  " );
+    public static void Drop_order(final Context context, final String group_id, final String order_id) {
+        Log.e("Drop_order", "Drop_order>>  ");
 
         SingleShotLocationProvider.requestSingleUpdate(context, new SingleShotLocationProvider.LocationCallback() {
             @Override
@@ -674,7 +680,7 @@ public class Zuwagon {
 
     }
 
-    public static void enableGPS(final Context context, final String group_ID, final String start_stop) {
+    public static void enableGPS(final Context context, final String group_ID, final String start_stop, final ArrayList<Order> order_list) {
 
         final LocationRequest locationRequest = LocationRequest.create();
         locationRequest.setInterval(Constants.DEFAULT_LOCATION_UPDATE_INTERVAL_MS);
@@ -695,14 +701,25 @@ public class Zuwagon {
                             case ZWInstantLocationCallback.OK:
                                 Log.e("StartTracking_http", "StartTracking_http " + location.toString());
                                 if (start_stop.equalsIgnoreCase("START")) {
-                                    callStartAPI(context, location, group_ID);
+                                    callStartAPI(context, location, group_ID, order_list);
                                 } else {
                                     callStopAPI(context, location, group_ID);
                                 }
 
                                 break;
                             case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
-
+                                if (start_stop.equalsIgnoreCase("STOP")) {
+                                    String s = config().getString(LAST_LOCATION, null);
+                                    if (s != null) {
+                                        String[] a = s.split(",");
+                                        double lat = Double.parseDouble(a[0]);
+                                        double log = Double.parseDouble(a[1]);
+                                        Location location1 = new Location("");
+                                        location1.setLatitude(lat);
+                                        location1.setLongitude(log);
+                                        callStopAPI(context, location1, group_ID);
+                                    }
+                                }
                                 break;
                             case ZWInstantLocationCallback.PERMISSION_REQUEST_NEED:
                                 zwHttpCallback2.HttpErrorMsg("START", "Location not available");

@@ -22,15 +22,15 @@ public class App extends Application {
         // Framework initialization. Should be done once, before Zuwagon.startTrack called.
         Zuwagon.configure(getApplicationContext(),
 
-                "XXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXXXXX",
+                "863664034281773",
+                "gEWHxlE236HaB94emky6XflShu4Z",
                 0,
                 "Channel title",
                 "Notification title",
                 "Notification text",
                 "Notification ticker",
                 0, 0
-                );
+        );
 
         // Add any location processors you want
         // Http send implementation.
