@@ -5,18 +5,26 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import org.json.JSONObject;
+
+import zuwagon.zutracklib.ZWHttpCallback;
 import zuwagon.zutracklib.ZWInstantLocationCallback;
 import zuwagon.zutracklib.ZWProcessLocationCallback;
 import zuwagon.zutracklib.ZWStatus;
 import zuwagon.zutracklib.ZWStatusCallback;
 import zuwagon.zutracklib.Zuwagon;
+import zuwagon.zutracklib.Order;
 
-public class MainActivity extends AppCompatActivity {
+import java.util.ArrayList;
+
+public class MainActivity extends AppCompatActivity implements ZWHttpCallback {
 
     TextView tvStatus, tvLocation;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,18 +33,23 @@ public class MainActivity extends AppCompatActivity {
 
         tvStatus = findViewById(R.id.tvStatus);
         tvLocation = findViewById(R.id.tvLocation);
-
+        final ArrayList<Order> orderList = new ArrayList<>();
+        orderList.add(new Order("1001","22.6882122","75.808748"));
+        orderList.add(new Order("2002","22.6882122","75.808748"));
+        orderList.add(new Order("3003","22.6882122","75.808748"));
         findViewById(R.id.bEnableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Zuwagon.startTrack(MainActivity.this);
+
+                Zuwagon.StartTracking(MainActivity.this, "12345", orderList);
             }
         });
+
 
         findViewById(R.id.bDisableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Zuwagon.stopTrack(MainActivity.this);
+                Zuwagon.StopTracking(MainActivity.this, "12345");
             }
         });
 
@@ -51,9 +64,15 @@ public class MainActivity extends AppCompatActivity {
                             public void run() {
                                 String text = "Unknown result: " + result;
                                 switch (result) {
-                                    case ZWInstantLocationCallback.OK: text = "Current location: " + location; break;
-                                    case ZWInstantLocationCallback.PERMISSION_REQUEST_NEED: text = "Location permission request need"; break;
-                                    case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE: text = "Location data not available"; break;
+                                    case ZWInstantLocationCallback.OK:
+                                        text = "Current location: " + location;
+                                        break;
+                                    case ZWInstantLocationCallback.PERMISSION_REQUEST_NEED:
+                                        text = "Location permission request need";
+                                        break;
+                                    case ZWInstantLocationCallback.LOCATION_NOT_AWAILABLE:
+                                        text = "Location data not available";
+                                        break;
                                 }
 
 /*
@@ -87,13 +106,6 @@ Location Updates.
             }
         });
 
-//        findViewById(R.id.bCauseAppCrash).setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                // Encouraging application crash with division by zero.
-//                int a = 22 / 0;
-//            }
-//        });
     }
 
     @Override
@@ -102,6 +114,7 @@ Location Updates.
         // Add activity scope callbacks
         Zuwagon.addStatusCallback(zwStatusCallback, true);
         Zuwagon.addLocationProcessor(showLocationInTextView);
+        Zuwagon.setInterface(MainActivity.this);
     }
 
     @Override
@@ -122,13 +135,27 @@ Location Updates.
             int statusRes = R.string.zw_status_unknown;
 
             switch (code) {
-                case ZWStatus.SERVICE_STARTED: statusRes = R.string.zw_status_service_started; break;
-                case ZWStatus.INCORRECT_LOCATION_REQUEST_PARAMETERS: statusRes = R.string.zw_status_incorrect_request_parameters; break;
-                case ZWStatus.HARDWARE_RESOLUTION_FAILED: statusRes = R.string.zw_status_hardware_resolution_failed; break;
-                case ZWStatus.PERMISSION_REQUEST_FAILED: statusRes = R.string.zw_status_permission_request_failed; break;
-                case ZWStatus.SERIVCE_STOPPED: statusRes = R.string.zw_status_service_stopped; break;
-                case ZWStatus.HTTP_REQUEST_FAILED: statusRes = R.string.zw_status_http_request_failed; break;
-                case ZWStatus.WARNING_NO_LOCATION_LONG_TIME: statusRes = R.string.zw_status_warning_no_location_long_time; break;
+                case ZWStatus.SERVICE_STARTED:
+                    statusRes = R.string.zw_status_service_started;
+                    break;
+                case ZWStatus.INCORRECT_LOCATION_REQUEST_PARAMETERS:
+                    statusRes = R.string.zw_status_incorrect_request_parameters;
+                    break;
+                case ZWStatus.HARDWARE_RESOLUTION_FAILED:
+                    statusRes = R.string.zw_status_hardware_resolution_failed;
+                    break;
+                case ZWStatus.PERMISSION_REQUEST_FAILED:
+                    statusRes = R.string.zw_status_permission_request_failed;
+                    break;
+                case ZWStatus.SERIVCE_STOPPED:
+                    statusRes = R.string.zw_status_service_stopped;
+                    break;
+                case ZWStatus.HTTP_REQUEST_FAILED:
+                    statusRes = R.string.zw_status_http_request_failed;
+                    break;
+                case ZWStatus.WARNING_NO_LOCATION_LONG_TIME:
+                    statusRes = R.string.zw_status_warning_no_location_long_time;
+                    break;
             }
 
             tvStatus.setText(statusRes);
@@ -150,4 +177,30 @@ Location Updates.
             });
         }
     };
+
+    /*
+     *
+     * */
+    @Override
+    public void HttpErrorMsg(String type,String msg) {
+        Log.e("HttpErrorMsg", ">>>type   " + type);
+        Log.e("HttpErrorMsg", ">>>   " + msg);
+    }
+
+    @Override
+    public void HttpResponseMsg(String type,JSONObject jsonObject) {
+        Log.e("HttpResponseMsg", ">>>type   " + type);
+        Log.e("HttpResponseMsg", ">>>   " + jsonObject);
+
+    }
+
+    public void PickUp(View view) {
+        Zuwagon.PickUp_order(MainActivity.this, "42334", "4232");
+
+    }
+
+
+    public void Drop(View view) {
+        Zuwagon.Drop_order(MainActivity.this, "42334", "4232");
+    }
 }

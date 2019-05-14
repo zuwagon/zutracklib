@@ -6,61 +6,81 @@
 
 
     <LinearLayout
-        android:orientation="vertical"
-        android:background="@drawable/border1"
-        android:layout_margin="12dp"
-        android:padding="8dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:background="@drawable/border1"
+        android:orientation="vertical"
+        android:padding="8dp">
+
         <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="Last status received"
             android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:textStyle="bold" />
+
         <TextView
             android:id="@+id/tvStatus"
-            android:text="@string/zw_status_unknown"
-            android:layout_marginTop="8dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/zw_status_unknown" />
+
         <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="Current location"
             android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:textStyle="bold" />
+
         <TextView
             android:id="@+id/tvLocation"
-            android:text="@string/zw_status_unknown"
-            android:layout_marginTop="8dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/zw_status_unknown" />
     </LinearLayout>
 
     <Button
         android:id="@+id/bEnableService"
-        android:text="Start Tracking"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="Start Tracking" />
 
     <Button
         android:id="@+id/bDisableService"
-        android:text="Stop Tracking"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="Stop Tracking" />
 
     <Button
         android:id="@+id/bInstantLocation"
-        android:text="Retrieve current location"
-        android:layout_marginTop="16dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Retrieve current location" />
     <!--<Button-->
-        <!--android:id="@+id/bCauseAppCrash"-->
-        <!--android:text="Cause app crash"-->
-        <!--android:layout_marginTop="16dp"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="wrap_content" />-->
+    <!--android:id="@+id/bCauseAppCrash"-->
+    <!--android:text="Cause app crash"-->
+    <!--android:layout_marginTop="16dp"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="wrap_content" />-->
+
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:onClick="PickUp"
+        android:text="PickUp" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:onClick="Drop"
+        android:text="Drop" />
+
 
 </LinearLayout>

@@ -14,13 +14,16 @@ import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
+import static zuwagon.zutracklib.Constants.LAST_LOCATION;
+import static zuwagon.zutracklib.ZWStatusCallback.BASE_URL;
+
 public class ZWSocket {
     public static Socket mSocket = null;
     private static boolean mSocketAuthenticated;
     private static final String SOCKET_TAG = "Socket-IO";
 
-    private static final String authToken = "Bearer " + Zuwagon._apiKey;
-    private static final String serverURL = "https://api.zuwagon.com";
+    private static final String authToken = Zuwagon._apiKey;
+    private static final String serverURL = BASE_URL;
 
     private static final String imei = Zuwagon._riderId;
 
@@ -29,7 +32,7 @@ public class ZWSocket {
     public static final void connectToServer() {
         try {
             _needPing = true;
-            if(mSocket == null || !mSocket.connected()) {
+            if (mSocket == null || !mSocket.connected()) {
                 mSocket = IO.socket(serverURL);
                 initSocket();
             }
@@ -63,7 +66,8 @@ public class ZWSocket {
                     }
                 }
             }).start();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void sendHeartbeatUpdate(int status) {
@@ -79,7 +83,7 @@ public class ZWSocket {
 //                c_loc.put("time", mLocation.getTime());
 //                heartbeatData.put("c_loc", c_loc);
 //            }
-            if(mSocket != null && mSocket.connected()) {
+            if (mSocket != null && mSocket.connected()) {
                 Log.i(SOCKET_TAG, "heartbeatData " + heartbeatData.toString());
                 mSocket.emit("heartbeat", heartbeatData);
             }
@@ -94,9 +98,10 @@ public class ZWSocket {
             @Override
             public void run() {
                 try {
-                    Thread.sleep(3*60*1000); // Interval in milliseconds
-                    if(_needPing) ZWSocket.sendHeartbeatUpdate(1);
-                } catch (Exception ex) { }
+                    Thread.sleep(3 * 60 * 1000); // Interval in milliseconds
+                    if (_needPing) ZWSocket.sendHeartbeatUpdate(1);
+                } catch (Exception ex) {
+                }
 
                 if (_needPing) ping();
             }
@@ -107,6 +112,29 @@ public class ZWSocket {
     static ZWProcessLocationCallback sendLocationToServer = new ZWProcessLocationCallback() {
         @Override
         public void onNewLocation(final Location newLocation) {
+            int speed = (int) ((newLocation.getSpeed() * 3600) / 1000);
+            String s = Zuwagon.config().getString(LAST_LOCATION, null);
+            if (s != null) {
+                String[] a = s.split(",");
+                double lat = Double.parseDouble(a[0]);
+                double log = Double.parseDouble(a[1]);
+                Long time = Long.parseLong(a[2]);
+                Location location1 = new Location("");
+                location1.setLatitude(lat);
+                location1.setLongitude(log);
+                float[] results = new float[1];
+                Location.distanceBetween(newLocation.getLatitude(),newLocation.getLongitude(),location1.getLatitude(),location1.getLongitude(),results);
+                Log.i("DISTANCE", ">>>>   DISTANCE FROM LAST POINT " + results[0]);
+                Log.i("TIME", ">>>>   TIME " + (newLocation.getTime()-time)/1000);
+                float speedFromLastCoord = (results[0] * 3600)/(newLocation.getTime()-time);
+                Log.i("speedFromLastCoord", ">>>>   speedFromLastCoord " + speedFromLastCoord);
+                if (speedFromLastCoord > 110) {
+                    return;
+                }
+            }
+
+
+            Log.e("SPEED", ">>>>   test " + speed);
             JSONObject loc = new JSONObject();
             try {
                 loc.put("lat", newLocation.getLatitude());
@@ -119,8 +147,10 @@ public class ZWSocket {
                 response.put("location", loc);
 
                 Log.i(SOCKET_TAG, " Loc " + response.toString());
-                if(mSocket != null && mSocket.connected())
+                if (mSocket != null && mSocket.connected())
                     mSocket.emit("tcptrip", response);
+
+                Zuwagon.config().edit().putString(LAST_LOCATION, newLocation.getLatitude() + "," + newLocation.getLongitude()+","+newLocation.getTime()).apply();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -136,7 +166,7 @@ public class ZWSocket {
                 public void run() {
                     try {
                         Thread.sleep(2000); // Interval in milliseconds
-                        if(_needPing && mSocketAuthenticated) connectToServer();
+                        if (_needPing && mSocketAuthenticated) connectToServer();
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
