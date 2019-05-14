@@ -4,6 +4,9 @@ import com.google.android.gms.location.LocationRequest;
 
 public class Constants {
 
+    public static String ONGPS = "ONGPS";
+    public static String START_STOP = "START_STOP";
+
     /**
      * Http read timeout (ms)
      */
@@ -24,10 +27,13 @@ public class Constants {
      */
     public static final long ALARM_RECEIVER_INTERVAL_MS = 60000;
 
+    public static final float MIN_DISTANCE = 20;
+
     /**
      * Delay before recreating service after it dropped by system.
      * Intended for Android 7.0- and background services.
      */
+
     public static final long RECREATE_SERVICE_ON_DESTROY_DELAY_MS = 5000;
 
     /**
@@ -48,12 +54,12 @@ public class Constants {
     /**
      * Desired interval for active location updates.
      */
-    public static final long DEFAULT_LOCATION_UPDATE_INTERVAL_MS = 10000;
+    public static final long DEFAULT_LOCATION_UPDATE_INTERVAL_MS = 5000;
 
     /**
      * Fastest interval for location updates.
      */
-    public static final long DEFAULT_LOCATION_UPDATE_FASTEST_INTERVAL_MS = 5000;
+    public static final long DEFAULT_LOCATION_UPDATE_FASTEST_INTERVAL_MS = 3000;
 
     /**
      * Location priority setting.
@@ -77,4 +83,6 @@ public class Constants {
     public static final int RESOLUTION_OPTION_PERMISSIONS = 2;
 
     public static final String TAG = "zuwagon";
+
+    public static String LAST_LOCATION = "LAST_LOCATION";
 }
