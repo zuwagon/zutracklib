@@ -34,14 +34,14 @@ public class MainActivity extends AppCompatActivity implements ZWHttpCallback {
         tvStatus = findViewById(R.id.tvStatus);
         tvLocation = findViewById(R.id.tvLocation);
         final ArrayList<Order> orderList = new ArrayList<>();
-        orderList.add(new Order("1001","22.6882122","75.808748"));
+        orderList.add(new Order("1001","22.6830252","75.821534"));
         orderList.add(new Order("2002","22.6882122","75.808748"));
         orderList.add(new Order("3003","22.6882122","75.808748"));
         findViewById(R.id.bEnableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                Zuwagon.StartTracking(MainActivity.this, "12345", orderList);
+                Zuwagon.StartTracking(MainActivity.this, "1245100", orderList);
             }
         });
 
@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements ZWHttpCallback {
         findViewById(R.id.bDisableService).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Zuwagon.StopTracking(MainActivity.this, "12345");
+                Zuwagon.StopTracking(MainActivity.this, "");
             }
         });
 

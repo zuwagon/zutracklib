@@ -292,7 +292,10 @@ public class Zuwagon {
 
     static final void setNeedServiceStarted(boolean value) {
         _needServiceStarted = value;
-        config().edit().putBoolean(Constants.CONFIG.NEED_SERVICE_STARTED, _needServiceStarted).commit();
+        try {
+            config().edit().putBoolean(Constants.CONFIG.NEED_SERVICE_STARTED, _needServiceStarted).commit();
+        } catch (Exception ignored) {
+        }
     }
 
     static final void postStatus(final int code) {
@@ -639,7 +642,7 @@ public class Zuwagon {
                         @Override
                         public void onErrorResponse(VolleyError error) {
                             Log.e("onErrorResponse", "onErrorResponse   " + error);
-                            if (error.networkResponse.data != null) {
+                            if (error.networkResponse != null && error.networkResponse.data != null) {
                                 try {
                                     String body = new String(error.networkResponse.data, "UTF-8");
                                     zwHttpCallback2.HttpErrorMsg("DROP", body);
