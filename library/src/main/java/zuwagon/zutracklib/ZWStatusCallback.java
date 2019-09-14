@@ -14,6 +14,7 @@ public interface ZWStatusCallback {
 
     void onStatus(int code);
 
-    String BASE_URL = "https://api.zuwagon.com";
+//    String BASE_URL = "https://api.zuwagon.com";
+    String BASE_URL = "https://gpstcpserver-env-5.us-east-1.elasticbeanstalk.com";
     String CALL_API = "CALL_API";
 }
